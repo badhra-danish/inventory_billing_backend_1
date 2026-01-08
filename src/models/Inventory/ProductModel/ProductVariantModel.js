@@ -1,0 +1,53 @@
+const { DataTypes } = require("sequelize");
+const sequelize = require("../../../config/database");
+
+const Product_Variant = sequelize.define(
+  "Product_Variant",
+  {
+    product_variant_id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true,
+    },
+    price: {
+      type: DataTypes.DOUBLE,
+      allowNull: false,
+      min: {
+        args: [0],
+        msg: "Price must be greater than or equal to 0",
+      },
+    },
+    skuCode: {
+      type: DataTypes.STRING(50),
+      allowNull: false,
+    },
+    discount_type: {
+      type: DataTypes.ENUM("FIXED", "PERCENTAGE", "NONE"),
+      defaultValue: "NONE",
+    },
+    discount_value: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+    },
+    tax_type: {
+      type: DataTypes.ENUM("FIXED", "PERCENTAGE", "NONE"),
+      defaultValue: "NONE",
+    },
+    tax_value: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+    },
+    product_id: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      field: "product_id",
+    },
+  },
+  {
+    tableName: "product_variants",
+    timestamps: true,
+    paranoid: true,
+  }
+);
+
+module.exports = Product_Variant;

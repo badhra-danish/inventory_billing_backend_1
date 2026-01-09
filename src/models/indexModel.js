@@ -25,12 +25,13 @@ SubCategory.belongsTo(Category, {
 Attribute.hasMany(AttributeValues, {
   foreignKey: "attribute_id",
   as: "attributeValues",
-  onDelete: "CASCADE",
+  onDelete: "RESTRICT",
   onUpdate: "CASCADE",
 });
 AttributeValues.belongsTo(Attribute, {
   foreignKey: "attribute_id",
   as: "attribute",
+  onDelete: "RESTRICT",
 });
 
 // Product Model Relationship

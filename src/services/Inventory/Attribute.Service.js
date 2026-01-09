@@ -117,23 +117,22 @@ exports.attributeService = {
   deleteAttribute: async (attributeID) => {
     const transaction = await sequelize.transaction();
     try {
-      const attribute = await Attribute.findByPk(attributeID);
+      const attribute = await Attribute.findByPk(attributeID, { transaction });
       if (!attribute) throw new Error("Attribute not Found");
-      console.log(attribute);
+      //console.log(attribute);
 
       await AttributeValues.destroy({
-        where: { attributeID },
+        where: { attribute_id: attributeID },
         transaction,
       });
 
-      await attribute.destroy({
-        where: { attributeID },
-        transaction,
-      });
+      await attribute.destroy({ transaction });
+
       await transaction.commit();
       return;
     } catch (error) {
       await transaction.rollback();
+      console.log(error);
       throw error;
     }
   },

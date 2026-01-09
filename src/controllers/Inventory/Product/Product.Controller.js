@@ -1,6 +1,6 @@
 const {
   productService,
-} = require("../../../services/Inventory/Product/ProductService");
+} = require("../../../services/Inventory/Product/Product.Service");
 const { success, error } = require("../../../utils/response");
 const { getPagination, getPageMetaData } = require("../../../utils/Pagination");
 const {

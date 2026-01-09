@@ -1,5 +1,5 @@
 const { Customer } = require("../../models/indexModel");
-const { customerService } = require("../../services/People/CustomerService");
+const { customerService } = require("../../services/People/Customer.Service");
 const { success, error } = require("../../utils/response");
 const { getPagination, getPageMetaData } = require("../../utils/Pagination");
 

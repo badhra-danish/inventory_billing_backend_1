@@ -1,6 +1,6 @@
 const {
   attributeService,
-} = require("../../services/Inventory/AttributeService");
+} = require("../../services/Inventory/Attribute.Service");
 const { success, error } = require("../../utils/response");
 const { getPagination, getPageMetaData } = require("../../utils/Pagination");
 const { Attribute, AttributeValues } = require("../../models/indexModel");
@@ -50,7 +50,7 @@ exports.getAttributePage = async (req, res) => {
         {
           model: AttributeValues,
           as: "attributeValues",
-          attributes: ["attribute_value_ID", "value"],
+          attributes: ["attribute_value_id", "value"],
         },
       ],
     });

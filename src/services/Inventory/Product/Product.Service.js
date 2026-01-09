@@ -57,7 +57,6 @@ exports.productService = {
             product_variant_id: newVariant.product_variant_id,
             attribute_value_id: id,
           }));
-          console.log("from tkrsng", attributeRow);
 
           await Product_variant_Attribute.bulkCreate(attributeRow, {
             transaction,

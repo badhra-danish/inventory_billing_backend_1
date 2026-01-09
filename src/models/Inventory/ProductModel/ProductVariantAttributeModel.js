@@ -19,6 +19,11 @@ const Product_variant_Attribute = sequelize.define(
       allowNull: false,
       field: "product_variant_id",
     },
+  },
+  {
+    tableName: "product_variant_attributes",
+    timestamps: true,
+    paranoid: true,
   }
 );
 module.exports = Product_variant_Attribute;

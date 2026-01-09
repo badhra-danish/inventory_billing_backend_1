@@ -1,12 +1,17 @@
 // const app = require("./app");
 const sequelize = require("./src/config/database");
-
 const express = require("express");
 const app = express();
 app.use(express.json());
+const cors = require("cors");
 const PORT = process.env.PORT || 5000;
 const routes = require("./src/routes/index.routes");
-
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+  })
+);
 (async () => {
   try {
     await sequelize.authenticate();
@@ -19,7 +24,7 @@ const routes = require("./src/routes/index.routes");
       console.log(` Server running on  http://localhost:${PORT}/api
 `)
     );
-    app.use("/api", routes);
+    app.use("/api/v1", routes);
   } catch (error) {
     console.error(" Server error:", error);
   }

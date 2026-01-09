@@ -1,5 +1,7 @@
 const { Category } = require("../../models/indexModel");
-const { categoryService } = require("../../services/Inventory/CategoryService");
+const {
+  categoryService,
+} = require("../../services/Inventory/Category.Service");
 const { getPagination, getPageMetaData } = require("../../utils/Pagination");
 const { success, error } = require("../../utils/response");
 

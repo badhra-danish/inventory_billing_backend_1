@@ -1,5 +1,5 @@
 const { Brand } = require("../../models/indexModel");
-const { brandService } = require("../../services/Inventory/BrandService");
+const { brandService } = require("../../services/Inventory/Brand.Service");
 const { success, error } = require("../../utils/response");
 const { getPagination, getPageMetaData } = require("../../utils/Pagination");
 

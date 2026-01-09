@@ -1,7 +1,7 @@
 const { Category, SubCategory } = require("../../models/indexModel");
 const {
   SubCategoryService,
-} = require("../../services/Inventory/SubCategoryService");
+} = require("../../services/Inventory/SubCategory.Service");
 const { getPagination, getPageMetaData } = require("../../utils/Pagination");
 const { success, error } = require("../../utils/response");
 

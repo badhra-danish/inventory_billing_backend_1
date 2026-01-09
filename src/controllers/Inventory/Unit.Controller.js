@@ -1,5 +1,5 @@
 const { Unit } = require("../../models/indexModel");
-const { unitService } = require("../../services/Inventory/UnitService");
+const { unitService } = require("../../services/Inventory/Unit.Service");
 const { success, error } = require("../../utils/response");
 const { getPagination, getPageMetaData } = require("../../utils/Pagination");
 

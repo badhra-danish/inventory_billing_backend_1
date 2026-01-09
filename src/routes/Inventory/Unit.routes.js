@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const UnitController = require("../../controllers/Inventory/UnitController");
+const UnitController = require("../../controllers/Inventory/Unit.Controller");
 
 router.post("/create", UnitController.createUnit);
 router.put("/update/:unitID", UnitController.updateUnit);

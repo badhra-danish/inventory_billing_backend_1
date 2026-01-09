@@ -1,5 +1,7 @@
 const { Warranty } = require("../../models/indexModel");
-const { warrantyService } = require("../../services/Inventory/WarrantyService");
+const {
+  warrantyService,
+} = require("../../services/Inventory/Warranty.Service");
 const { success, error } = require("../../utils/response");
 const { getPagination, getPageMetaData } = require("../../utils/Pagination");
 

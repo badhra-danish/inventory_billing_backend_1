@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const AttributeController = require("../../controllers/Inventory/AttributeControler");
+const AttributeController = require("../../controllers/Inventory/Attribute.Controller");
 
 router.post("/create", AttributeController.createAttribute);
 router.put("/update/:attributeID", AttributeController.updateAttribute);

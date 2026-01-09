@@ -1,4 +1,4 @@
-const SubCategoryController = require("../../controllers/Inventory/SubCategoryController");
+const SubCategoryController = require("../../controllers/Inventory/SubCategory.Controller");
 const express = require("express");
 const router = express.Router();
 

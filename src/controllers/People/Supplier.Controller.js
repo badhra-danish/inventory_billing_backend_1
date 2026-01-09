@@ -1,5 +1,5 @@
 const { Supplier } = require("../../models/indexModel");
-const { supplierService } = require("../../services/People/SupplerService");
+const { supplierService } = require("../../services/People/Suppler.Service");
 const { success, error } = require("../../utils/response");
 const { getPagination, getPageMetaData } = require("../../utils/Pagination");
 

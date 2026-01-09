@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const WarrantyController = require("../../controllers/Inventory/WarrantyController");
+const WarrantyController = require("../../controllers/Inventory/Warranty.Controller");
 
 router.post("/create", WarrantyController.createWarranty);
 router.put("/update/:warrantyID", WarrantyController.updateWarranty);

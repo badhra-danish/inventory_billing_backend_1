@@ -27,7 +27,6 @@ const Attribute = Sequelize.define(
   {
     tableName: "attributes",
     timestamps: true,
-    paranoid: true,
   }
 );
 

@@ -11,4 +11,10 @@ router.post(
   ProductController.createProduct
 );
 router.get("/getproductpage", ProductController.getProductPage);
+router.get("/getallproduct", ProductController.getAllProduct);
+router.get(
+  "/getallvariantbyproduct/:product_id",
+  ProductController.getAllVariantByProduct
+);
+router.put("/upadtevariant/:variant_id", ProductController.updateVariant);
 module.exports = router;

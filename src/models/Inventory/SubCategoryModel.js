@@ -54,7 +54,6 @@ const SubCategory = sequelize.define(
   {
     tableName: "subcategories",
     timestamps: true,
-    paranoid: true,
   }
 );
 module.exports = SubCategory;

@@ -79,3 +79,44 @@ exports.getProductPage = async (req, res) => {
     return error(res, err.message);
   }
 };
+
+exports.getAllProduct = async (req, res) => {
+  try {
+    const { page, limit, offset } = getPagination(req.query);
+
+    const product = await productService.getAllProduct(limit, offset);
+    return success(
+      res,
+      `${limit} Product Fetched`,
+      product.data,
+      getPageMetaData(page, limit, product.count)
+    );
+  } catch (err) {
+    return error(res, err.message);
+  }
+};
+
+exports.getAllVariantByProduct = async (req, res) => {
+  try {
+    const { product_id } = req.params;
+    const productVariant = await productService.getAllVariantByProduct(
+      product_id
+    );
+    return success(res, "Fetch All Variant SuccessFully", productVariant);
+  } catch (err) {
+    return error(res, err.message, 400);
+  }
+};
+
+exports.updateVariant = async (req, res) => {
+  try {
+    const { variant_id } = req.params;
+    const updateVariant = await productService.updateVariant(
+      variant_id,
+      req.body
+    );
+    return success(res, "Variant Upadate Successfully", updateVariant);
+  } catch (err) {
+    return error(res, err.message, 400);
+  }
+};

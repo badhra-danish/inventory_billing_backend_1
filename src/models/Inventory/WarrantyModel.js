@@ -49,7 +49,6 @@ const Warranty = Sequelize.define(
   {
     tableName: "warranties",
     timestamps: true,
-    paranoid: true,
   }
 );
 

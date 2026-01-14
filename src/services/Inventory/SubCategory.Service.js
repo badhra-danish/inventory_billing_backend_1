@@ -1,5 +1,7 @@
+const { where } = require("sequelize");
 const { SubCategory } = require("../../models/indexModel");
 const { Category } = require("../../models/indexModel");
+const { th } = require("zod/locales");
 
 exports.SubCategoryService = {
   createSubcategory: async (subCategoryData) => {
@@ -50,6 +52,21 @@ exports.SubCategoryService = {
       if (!subCategory) throw new Error("SubCategory Not Found");
       await subCategory.destroy();
       return;
+    } catch (error) {
+      throw error;
+    }
+  },
+  getSubCategoryByCategory: async (categoryID) => {
+    try {
+      const subCategories = await SubCategory.findAll({
+        where: { category_id: categoryID },
+      });
+
+      // if (subCategories.length === 0) {
+      //   throw new Error("SubCategory Not Found");
+      // }
+
+      return subCategories;
     } catch (error) {
       throw error;
     }

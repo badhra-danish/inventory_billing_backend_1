@@ -22,7 +22,6 @@ const Attribute_values = Sequelize.define(
   {
     tableName: "attributeValues",
     timestamps: true,
-    paranoid: true,
   }
 );
 module.exports = Attribute_values;

@@ -30,7 +30,7 @@ const Product_Variant = sequelize.define(
       defaultValue: 0,
     },
     tax_type: {
-      type: DataTypes.ENUM("FIXED", "PERCENTAGE", "NONE"),
+      type: DataTypes.ENUM("INCLUSIVE", "EXCLUSIVE", "NONE"),
       defaultValue: "NONE",
     },
     tax_value: {
@@ -46,7 +46,6 @@ const Product_Variant = sequelize.define(
   {
     tableName: "product_variants",
     timestamps: true,
-    paranoid: true,
   }
 );
 

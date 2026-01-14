@@ -9,5 +9,8 @@ router.delete(
   SubCategoryController.deleteSubCategory
 );
 router.get("/getSubCategoryPage", SubCategoryController.getSubCategoryPage);
-
+router.get(
+  "/getsubcategorybycategory/:category_id",
+  SubCategoryController.getSubcategoryByCategory
+);
 module.exports = router;

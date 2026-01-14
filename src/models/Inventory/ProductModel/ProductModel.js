@@ -46,12 +46,10 @@ const Product = sequelize.define(
     },
     category_id: {
       type: DataTypes.UUID,
-      allowNull: false,
       field: "category_id",
     },
     subcategory_id: {
       type: DataTypes.UUID,
-      allowNull: false,
       field: "subcategory_id",
     },
     unit_id: {
@@ -78,7 +76,6 @@ const Product = sequelize.define(
   {
     tableName: "products",
     timestamps: true,
-    paranoid: true,
   }
 );
 

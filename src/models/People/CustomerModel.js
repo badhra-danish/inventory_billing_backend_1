@@ -88,7 +88,6 @@ const Customer = sequelize.define(
   {
     tableName: "customers",
     timestamps: true,
-    paranoid: true,
   }
 );
 

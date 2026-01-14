@@ -1,3 +1,4 @@
+const sequelize = require("../../config/database");
 const { Category, SubCategory } = require("../../models/indexModel");
 const {
   SubCategoryService,
@@ -45,7 +46,18 @@ exports.getSubCategoryPage = async (req, res) => {
     const SubCategoryData = await SubCategory.findAndCountAll({
       limit,
       offset,
+      distinct: true,
       order: [["createdAt", "DESC"]],
+      attributes: {
+        include: [[sequelize.col("category.name"), "categoryName"]],
+      },
+      include: [
+        {
+          model: Category,
+          as: "category",
+          attributes: [],
+        },
+      ],
     });
 
     return success(
@@ -56,5 +68,16 @@ exports.getSubCategoryPage = async (req, res) => {
     );
   } catch (err) {
     return error(res, err.message);
+  }
+};
+exports.getSubcategoryByCategory = async (req, res) => {
+  try {
+    const { category_id } = req.params;
+    const subCategory = await SubCategoryService.getSubCategoryByCategory(
+      category_id
+    );
+    return success(res, "SubCategory Fetch Successfully", subCategory);
+  } catch (err) {
+    return error(res, err.message, 400);
   }
 };

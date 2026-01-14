@@ -26,7 +26,6 @@ const Brand = Sequelize.define(
   {
     tableName: "brands",
     timestamps: true,
-    paranoid: true,
   }
 );
 module.exports = Brand;

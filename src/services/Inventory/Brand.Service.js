@@ -16,6 +16,7 @@ exports.brandService = {
       });
       return brand;
     } catch (error) {
+      console.log(error);
       throw error;
     }
   },

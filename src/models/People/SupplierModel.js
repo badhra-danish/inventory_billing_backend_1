@@ -88,7 +88,6 @@ const Supplier = sequelize.define(
   {
     tableName: "suppliers",
     timestamps: true,
-    paranoid: true,
   }
 );
 

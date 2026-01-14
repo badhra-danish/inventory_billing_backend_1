@@ -34,7 +34,6 @@ const Category = Sequelize.define(
   {
     tableName: "categories",
     timestamps: true,
-    paranoid: true,
   }
 );
 

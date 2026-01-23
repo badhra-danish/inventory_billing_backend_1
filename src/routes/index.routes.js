@@ -10,7 +10,8 @@ const warrantyRoutes = require("./Inventory/Warranty.routes");
 const customerRoutes = require("./People/customer.Routes");
 const supplierRoutes = require("./People/supplier.route");
 const productRoutes = require("./Inventory/Product.Routes");
-
+//stock
+const stockRoutes = require("./Stock/Stock.Routes");
 router.use("/category", categoryRoutes);
 router.use("/subcategory", subcategoryRoutes);
 router.use("/brand", brandRoutes);
@@ -22,4 +23,5 @@ router.use("/product", productRoutes);
 router.use("/customer", customerRoutes);
 router.use("/supplier", supplierRoutes);
 
+router.use("/stock", stockRoutes);
 module.exports = router;

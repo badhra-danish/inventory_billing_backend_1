@@ -12,6 +12,8 @@ const Supplier = require("./People/SupplierModel");
 const Product = require("./Inventory/ProductModel/ProductModel");
 const Product_Variant = require("./Inventory/ProductModel/ProductVariantModel");
 const Product_variant_Attribute = require("./Inventory/ProductModel/ProductVariantAttributeModel");
+//stock ---
+const Stock = require("./Stock/Stock.Model");
 
 Category.hasMany(SubCategory, {
   foreignKey: "category_id",
@@ -73,7 +75,15 @@ Product_variant_Attribute.belongsTo(AttributeValues, {
   foreignKey: "attribute_value_id",
   as: "value",
 });
-
+//stock--
+Product_Variant.hasOne(Stock, {
+  foreignKey: "product_variant_id",
+  as: "stock",
+});
+Stock.belongsTo(Product_Variant, {
+  foreignKey: "product_variant_id",
+  as: "variant",
+});
 module.exports = {
   Category,
   SubCategory,
@@ -87,4 +97,5 @@ module.exports = {
   Product,
   Product_Variant,
   Product_variant_Attribute,
+  Stock,
 };

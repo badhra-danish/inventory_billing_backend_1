@@ -8,13 +8,23 @@ const {
 router.post(
   "/create",
   validate(createProductSchema),
-  ProductController.createProduct
+  ProductController.createProduct,
+);
+router.post(
+  "/addproductvariant/:product_id",
+  ProductController.createVariantofProduct,
 );
 router.get("/getproductpage", ProductController.getProductPage);
 router.get("/getallproduct", ProductController.getAllProduct);
 router.get(
   "/getallvariantbyproduct/:product_id",
-  ProductController.getAllVariantByProduct
+  ProductController.getAllVariantByProduct,
 );
-router.put("/upadtevariant/:variant_id", ProductController.updateVariant);
+router.get("/getvariantbysearch", ProductController.getAllVariantBySearch);
+
+router.put("/upadatevariant/:variant_id", ProductController.updateVariant);
+router.put("/updateproduct/:product_id", ProductController.updateProduct);
+
+router.delete("/deletevariant/:variant_id", ProductController.deleteVariant);
+router.delete("/deleteproduct/:product_id", ProductController.deleteProduct);
 module.exports = router;

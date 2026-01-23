@@ -48,7 +48,7 @@ const createProductSchema = z.object({
     warranty_id: uuidSchema,
     status: z.enum(["ACTIVE", "INACTIVE"]).default("ACTIVE"),
     manufacturer: z.string().optional(),
-    manufacture_date: z.coerce.date().optional(),
+    manufacturer_date: z.coerce.date().optional(),
     expiry_date: z.coerce.date().optional(),
   }),
   productVariants: z

@@ -1,4 +1,6 @@
 const sequelize = require("../../../config/database");
+const { Op } = require("sequelize");
+
 const {
   Product,
   Product_Variant,
@@ -11,7 +13,7 @@ const {
   Attribute,
   AttributeValues,
 } = require("../../../models/indexModel");
-
+const { buildVariantLabel } = require("../../../utils/VariantLabelBulder");
 exports.productService = {
   createProduct: async (productData) => {
     const transaction = await sequelize.transaction();
@@ -34,9 +36,35 @@ exports.productService = {
           unit_id: product.unit_id,
           warranty_id: product.warranty_id,
         },
-        { transaction }
+        { transaction },
       );
       //create Variant
+      // for (const v of productVariants) {
+      //   const newVariant = await Product_Variant.create(
+      //     {
+      //       product_id: newProduct.product_id,
+      //       price: v.price,
+      //       skuCode: v.skuCode,
+      //       discount_type: v.discount_type,
+      //       discount_value: v.discount_value,
+      //       tax_type: v.tax_type,
+      //       tax_value: v.tax_value,
+      //     },
+      //     { transaction },
+      //   );
+
+      //   // create Attribute Values
+      //   if (v.attribute_value_ids && v.attribute_value_ids.length > 0) {
+      //     const attributeRow = v.attribute_value_ids.map((id) => ({
+      //       product_variant_id: newVariant.product_variant_id,
+      //       attribute_value_id: id,
+      //     }));
+
+      //     await Product_variant_Attribute.bulkCreate(attributeRow, {
+      //       transaction,
+      //     });
+      //   }
+      // }
       for (const v of productVariants) {
         const newVariant = await Product_Variant.create(
           {
@@ -47,11 +75,12 @@ exports.productService = {
             discount_value: v.discount_value,
             tax_type: v.tax_type,
             tax_value: v.tax_value,
+            variant_label: "temp",
           },
-          { transaction }
+          { transaction },
         );
 
-        // create Attribute Values
+        // 1️⃣ Create Attribute Relations
         if (v.attribute_value_ids && v.attribute_value_ids.length > 0) {
           const attributeRow = v.attribute_value_ids.map((id) => ({
             product_variant_id: newVariant.product_variant_id,
@@ -61,8 +90,40 @@ exports.productService = {
           await Product_variant_Attribute.bulkCreate(attributeRow, {
             transaction,
           });
+
+          // 2️⃣ Fetch Attributes for Label
+          const variantAttributes = await Product_variant_Attribute.findAll({
+            where: {
+              product_variant_id: newVariant.product_variant_id,
+            },
+            include: [
+              {
+                model: AttributeValues,
+                as: "value",
+                attributes: ["value"],
+                include: [
+                  {
+                    model: Attribute,
+                    as: "attribute",
+                    attributes: ["attributeName"],
+                  },
+                ],
+              },
+            ],
+            transaction,
+          });
+
+          // 3️⃣ Build Variant Label
+          const variantLabel = buildVariantLabel(variantAttributes);
+
+          // 4️⃣ Update Variant with Label
+          await newVariant.update(
+            { variant_label: variantLabel },
+            { transaction },
+          );
         }
       }
+
       const createdProduct = await Product.findByPk(
         newProduct.product_id,
 
@@ -104,7 +165,7 @@ exports.productService = {
               ],
             },
           ],
-        }
+        },
       );
       await transaction.commit();
       return createdProduct;
@@ -112,6 +173,32 @@ exports.productService = {
       transaction.rollback();
       console.log(error);
 
+      throw error;
+    }
+  },
+  updateProductInfo: async (product_id, productData) => {
+    try {
+      const { updateProductData } = productData;
+      const product = await Product.findByPk(product_id);
+
+      const updatedProduct = await product.update({
+        productName: updateProductData.productName,
+        slugName: updateProductData.slugName,
+        selling_type: updateProductData.selling_type,
+        product_type: updateProductData.product_type,
+        description: updateProductData.description,
+        manufacturer: updateProductData.manufacturer,
+        manufacturer_date: updateProductData.manufacturer_date,
+        expiry_date: updateProductData.expiry_date,
+        brand_id: updateProductData.brand_id,
+        category_id: updateProductData.category_id,
+        subcategory_id: updateProductData.subcategory_id,
+        unit_id: updateProductData.unit_id,
+        warranty_id: updateProductData.warranty_id,
+      });
+
+      return updatedProduct;
+    } catch (error) {
       throw error;
     }
   },
@@ -151,18 +238,31 @@ exports.productService = {
         attributes: [
           ["product_id", "product_id"],
           ["productName", "productName"],
+          ["slugName", "slugName"],
+          ["selling_type", "selling_type"],
           ["product_type", "product_type"],
+          ["description", "description"],
           ["manufacturer_date", "manufacturer_date"],
+          ["manufacturer", "manufacturer"],
           ["expiry_date", "expiry_date"],
           [
             sequelize.fn("COUNT", sequelize.col("variants.product_variant_id")),
             "variant_count",
           ],
           [sequelize.col("category.name"), "categoryName"],
+          [sequelize.col("category.category_id"), "category_id"],
+
           [sequelize.col("brand.brandName"), "brandName"],
+          [sequelize.col("brand.brand_id"), "brand_id"],
+
           [sequelize.col("unit.unitName"), "unitName"],
+          [sequelize.col("unit.unit_id"), "unit_id"],
+
           [sequelize.col("subcategory.subCategoryName"), "subCategoryName"],
+          [sequelize.col("subcategory.subCategory_id"), "subCategory_id"],
+
           [sequelize.col("warranty.warrantyName"), "warrantyName"],
+          [sequelize.col("warranty.warranty_id"), "warranty_id"],
         ],
         include: [
           {
@@ -266,6 +366,7 @@ exports.productService = {
           "product_variant_id",
           "price",
           "skuCode",
+          "variant_label",
           "tax_type",
           "tax_value",
           "discount_type",
@@ -300,6 +401,9 @@ exports.productService = {
         ],
         raw: true,
       });
+      if (rows.length === 0) {
+        throw new Error("Product Variant Not Found");
+      }
       const variantsMap = {};
 
       for (const row of rows) {
@@ -310,6 +414,7 @@ exports.productService = {
             product_variant_id: row.product_variant_id,
             price: row.price,
             skuCode: row.skuCode,
+            variant_label: row.variant_label,
             tax_type: row.tax_type,
             tax_value: row.tax_value,
             discount_type: row.discount_type,
@@ -332,6 +437,186 @@ exports.productService = {
     } catch (error) {
       console.log(error);
 
+      throw error;
+    }
+  },
+  getAllVariantBySearch: async (q) => {
+    try {
+      const { query } = q;
+      const variants = await Product_Variant.findAll({
+        where: {
+          [Op.or]: [
+            { skuCode: { [Op.like]: `%${query}%` } },
+            { variant_label: { [Op.like]: `%${query}%` } },
+          ],
+        },
+        attributes: [
+          "product_variant_id",
+          "skuCode",
+          "price",
+          "variant_label",
+          "tax_type",
+          "tax_value",
+          "discount_type",
+          "discount_value",
+          [sequelize.col("product.productName"), "productName"],
+          [sequelize.col("product.product_id"), "product_id"],
+        ],
+
+        include: [
+          {
+            model: Product,
+            as: "product",
+            attributes: [],
+
+            required: false,
+          },
+        ],
+        limit: 20,
+      });
+      return variants;
+    } catch (error) {
+      throw error;
+    }
+  },
+  createVariantofProduct: async (product_id, variantData) => {
+    const transaction = await sequelize.transaction();
+    try {
+      const { productVariants } = variantData;
+      const createdVariants = [];
+
+      for (const v of productVariants) {
+        // 1️⃣ Create variant with TEMP label
+        const newVariant = await Product_Variant.create(
+          {
+            product_id,
+            price: v.price,
+            skuCode: v.skuCode,
+            discount_type: v.discount_type,
+            discount_value: v.discount_value,
+            tax_type: v.tax_type,
+            tax_value: v.tax_value,
+            variant_label: "TEMP",
+          },
+          { transaction },
+        );
+
+        // 2️⃣ Create attribute relations (if any)
+        if (v.attribute_value_ids && v.attribute_value_ids.length > 0) {
+          const attributeRow = v.attribute_value_ids.map((id) => ({
+            product_variant_id: newVariant.product_variant_id,
+            attribute_value_id: id,
+          }));
+
+          await Product_variant_Attribute.bulkCreate(attributeRow, {
+            transaction,
+          });
+        }
+
+        // 3️⃣ Fetch attributes for label (ALWAYS)
+        const variantAttributes = await Product_variant_Attribute.findAll({
+          where: {
+            product_variant_id: newVariant.product_variant_id,
+          },
+          include: [
+            {
+              model: AttributeValues,
+              as: "value",
+              attributes: ["value"],
+              include: [
+                {
+                  model: Attribute,
+                  as: "attribute",
+                  attributes: ["attributeName"],
+                },
+              ],
+            },
+          ],
+          transaction,
+        });
+
+        // 4️⃣ Build final label
+        const variantLabel = buildVariantLabel(variantAttributes);
+
+        // 5️⃣ Update variant label
+        await newVariant.update(
+          { variant_label: variantLabel },
+          { transaction },
+        );
+
+        createdVariants.push(newVariant);
+      }
+
+      await transaction.commit();
+      return createdVariants;
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
+  },
+
+  deleteVariant: async (variant_id) => {
+    const transaction = await sequelize.transaction();
+
+    try {
+      const product_variant = await Product_Variant.findByPk(variant_id, {
+        transaction,
+      });
+
+      if (!product_variant) {
+        throw new Error("Product variant not found");
+      }
+
+      await Product_variant_Attribute.destroy({
+        where: { product_variant_id: variant_id },
+        transaction,
+      });
+
+      await product_variant.destroy({ transaction });
+
+      await transaction.commit();
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
+  },
+  deleteProduct: async (product_id) => {
+    const transaction = await sequelize.transaction();
+
+    try {
+      const product = await Product.findByPk(product_id, { transaction });
+
+      if (!product) {
+        throw new Error("Product not found");
+      }
+
+      const variants = await Product_Variant.findAll({
+        where: { product_id },
+        attributes: ["product_variant_id"],
+        transaction,
+      });
+
+      const variantIds = variants.map((v) => v.product_variant_id);
+
+      if (variantIds.length > 0) {
+        await Product_variant_Attribute.destroy({
+          where: {
+            product_variant_id: variantIds,
+          },
+          transaction,
+        });
+
+        await Product_Variant.destroy({
+          where: { product_id },
+          transaction,
+        });
+      }
+
+      await product.destroy({ transaction });
+
+      await transaction.commit();
+    } catch (error) {
+      await transaction.rollback();
       throw error;
     }
   },

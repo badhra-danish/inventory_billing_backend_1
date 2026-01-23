@@ -14,7 +14,7 @@ exports.customerService = {
       if (!location) throw new Error("Location is required");
       if (!location.city) throw new Error("City is required");
       if (!location.state) throw new Error("State is required");
-      if (!location.country) throw new Error("Country is required");
+      // if (!location.country) throw new Error("Country is required");
       if (!location.postalCode) throw new Error("Postal code is required");
 
       if (!status) throw new Error("Status is required");
@@ -28,7 +28,7 @@ exports.customerService = {
         location: {
           city: location.city,
           state: location.state,
-          country: location.country,
+          //  country: location.country,
           postalCode: location.postalCode,
         },
         status: status,
@@ -58,7 +58,7 @@ exports.customerService = {
       if (!location) throw new Error("Location is required");
       if (!location.city) throw new Error("City is required");
       if (!location.state) throw new Error("State is required");
-      if (!location.country) throw new Error("Country is required");
+      //if (!location.country) throw new Error("Country is required");
       if (!location.postalCode) throw new Error("Postal code is required");
 
       if (!status) throw new Error("Status is required");
@@ -72,7 +72,6 @@ exports.customerService = {
         location: {
           city: location.city,
           state: location.state,
-          country: location.country,
           postalCode: location.postalCode,
         },
         status: status,
@@ -89,6 +88,16 @@ exports.customerService = {
 
       await customer.destroy();
       return;
+    } catch (error) {
+      throw error;
+    }
+  },
+  getAllCustomer: () => {
+    try {
+      const customer = Customer.findAll({
+        attributes: ["customer_id", "firstName", "lastName"],
+      });
+      return customer;
     } catch (error) {
       throw error;
     }

@@ -5,7 +5,7 @@ const sequelize = require("../../config/database");
 const Customer = sequelize.define(
   "Customer",
   {
-    customerID: {
+    customer_id: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
@@ -88,7 +88,7 @@ const Customer = sequelize.define(
   {
     tableName: "customers",
     timestamps: true,
-  }
+  },
 );
 
 module.exports = Customer;

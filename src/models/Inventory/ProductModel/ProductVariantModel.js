@@ -21,6 +21,10 @@ const Product_Variant = sequelize.define(
       type: DataTypes.STRING(50),
       allowNull: false,
     },
+    variant_label: {
+      type: DataTypes.STRING(50),
+      allowNull: false,
+    },
     discount_type: {
       type: DataTypes.ENUM("FIXED", "PERCENTAGE", "NONE"),
       defaultValue: "NONE",
@@ -46,7 +50,7 @@ const Product_Variant = sequelize.define(
   {
     tableName: "product_variants",
     timestamps: true,
-  }
+  },
 );
 
 module.exports = Product_Variant;

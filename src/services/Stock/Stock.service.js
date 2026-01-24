@@ -1,7 +1,6 @@
-const { date } = require("zod");
 const { Product_Variant, Product } = require("../../models/indexModel");
 const Stock = require("../../models/Stock/Stock.Model");
-const { get } = require("../../routes/index.routes");
+
 const sequelize = require("../../config/database");
 const { Op } = require("sequelize");
 

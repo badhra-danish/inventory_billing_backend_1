@@ -8,12 +8,23 @@ const Warranty = require("./Inventory/WarrantyModel");
 const Customer = require("./People/CustomerModel");
 const Supplier = require("./People/SupplierModel");
 
-//Product Model and there Relations Model
+//----------Product Table Models--------///
+
 const Product = require("./Inventory/ProductModel/ProductModel");
 const Product_Variant = require("./Inventory/ProductModel/ProductVariantModel");
 const Product_variant_Attribute = require("./Inventory/ProductModel/ProductVariantAttributeModel");
-//stock ---
+
+//----------stock Table Models--------///
+
 const Stock = require("./Stock/Stock.Model");
+
+//----------Sales Table Models--------///
+
+const Sale = require("./Sales/Sales.Model");
+const SaleItem = require("./Sales/Sales_item.Model");
+const Payment = require("./Sales/payment.Model");
+
+/// ---------  relationship or the Assosiation of the models --------////
 
 Category.hasMany(SubCategory, {
   foreignKey: "category_id",
@@ -36,7 +47,7 @@ AttributeValues.belongsTo(Attribute, {
   onDelete: "RESTRICT",
 });
 
-// Product Model Relationship
+//-------- Product Model Relationship----------//
 Brand.hasMany(Product, { foreignKey: "brand_id", as: "products" });
 Product.belongsTo(Brand, { foreignKey: "brand_id", as: "brand" });
 
@@ -75,7 +86,9 @@ Product_variant_Attribute.belongsTo(AttributeValues, {
   foreignKey: "attribute_value_id",
   as: "value",
 });
-//stock--
+
+//-------------stock Model Relationship-------------/////
+
 Product_Variant.hasOne(Stock, {
   foreignKey: "product_variant_id",
   as: "stock",
@@ -84,6 +97,28 @@ Stock.belongsTo(Product_Variant, {
   foreignKey: "product_variant_id",
   as: "variant",
 });
+
+//-------------Sales Model Relationship-------------/////
+Sale.hasMany(SaleItem, {
+  foreignKey: "sale_id",
+  as: "sales_items",
+});
+
+SaleItem.belongsTo(Sale, {
+  foreignKey: "sale_id",
+  as: "sale",
+});
+
+Sale.hasMany(Payment, {
+  foreignKey: "sale_id",
+  as: "payments",
+});
+
+Payment.belongsTo(Sale, {
+  foreignKey: "sale_id",
+  as: "sale",
+});
+
 module.exports = {
   Category,
   SubCategory,
@@ -98,4 +133,7 @@ module.exports = {
   Product_Variant,
   Product_variant_Attribute,
   Stock,
+  Sale,
+  SaleItem,
+  Payment,
 };

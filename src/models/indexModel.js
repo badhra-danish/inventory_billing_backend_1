@@ -5,6 +5,8 @@ const Unit = require("./Inventory/UnitModel");
 const Attribute = require("./Inventory/Attributemodel");
 const AttributeValues = require("./Inventory/Attrubute_values");
 const Warranty = require("./Inventory/WarrantyModel");
+
+////----------People Table Models--------///
 const Customer = require("./People/CustomerModel");
 const Supplier = require("./People/SupplierModel");
 
@@ -119,6 +121,19 @@ Payment.belongsTo(Sale, {
   as: "sale",
 });
 
+Customer.hasMany(Sale, {
+  foreignKey: "customer_id",
+  as: "sales",
+});
+
+Sale.belongsTo(Customer, {
+  foreignKey: "customer_id",
+  as: "customer",
+});
+SaleItem.belongsTo(Product_Variant, {
+  foreignKey: "product_variant_id",
+  as: "variant",
+});
 module.exports = {
   Category,
   SubCategory,

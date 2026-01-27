@@ -1,6 +1,6 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../../config/database");
-const { tr } = require("zod/locales");
+const { tr, fa } = require("zod/locales");
 
 const Payment = sequelize.define(
   "Payment",
@@ -25,6 +25,10 @@ const Payment = sequelize.define(
     },
     payment_date: {
       type: DataTypes.DATEONLY,
+      allowNull: false,
+    },
+    reference_no: {
+      type: DataTypes.STRING,
       allowNull: false,
     },
     note: {

@@ -6,4 +6,7 @@ const buildVariantLabel = (variantAttributes) => {
     .filter(Boolean)
     .join(" | ");
 };
-module.exports = { buildVariantLabel };
+const generateBarcode = (productCode, variantLabel) => {
+  return `${productCode}-${Date.now()}`;
+};
+module.exports = { buildVariantLabel, generateBarcode };

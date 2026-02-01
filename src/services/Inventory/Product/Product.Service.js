@@ -13,7 +13,10 @@ const {
   Attribute,
   AttributeValues,
 } = require("../../../models/indexModel");
-const { buildVariantLabel } = require("../../../utils/VariantLabelBulder");
+const {
+  buildVariantLabel,
+  generateBarcode,
+} = require("../../../utils/VariantLabelBulder");
 exports.productService = {
   createProduct: async (productData) => {
     const transaction = await sequelize.transaction();
@@ -75,6 +78,7 @@ exports.productService = {
             discount_value: v.discount_value,
             tax_type: v.tax_type,
             tax_value: v.tax_value,
+            barcode: "temp",
             variant_label: "temp",
           },
           { transaction },
@@ -113,12 +117,12 @@ exports.productService = {
             transaction,
           });
 
-          // 3️⃣ Build Variant Label
+          // Build Variant Label
           const variantLabel = buildVariantLabel(variantAttributes);
+          const barCode = generateBarcode(newVariant.skuCode, variantLabel);
 
-          // 4️⃣ Update Variant with Label
           await newVariant.update(
-            { variant_label: variantLabel },
+            { variant_label: variantLabel, barcode: barCode },
             { transaction },
           );
         }
@@ -316,50 +320,6 @@ exports.productService = {
 
   getAllVariantByProduct: async (product_id) => {
     try {
-      // const productVariants = await Product_Variant.findAll({
-      //   where: { product_id: product_id },
-      //   attributes: [
-      //     "product_variant_id",
-      //     "price",
-      //     "skuCode",
-      //     "tax_type",
-      //     "tax_value",
-      //     "discount_type",
-      //     "discount_value",
-      //     [
-      //       sequelize.col("variant_attributes.product_varaint_attribute_id"),
-      //       "product_varaint_attribute_id",
-      //     ],
-      //     [sequelize.col("variant_attributes->value.value"), "attributeValue"],
-      //     [
-      //       sequelize.col("variant_attributes->value->attribute.attributeName"),
-      //       "attributeName",
-      //     ],
-      //   ],
-      //   include: [
-      //     {
-      //       model: Product_variant_Attribute,
-      //       as: "variant_attributes",
-      //       attributes: [],
-      //       required: false,
-      //       include: [
-      //         {
-      //           model: AttributeValues,
-      //           as: "value",
-      //           attributes: [],
-      //           include: [
-      //             {
-      //               model: Attribute,
-      //               as: "attribute",
-      //               attributes: [],
-      //             },
-      //           ],
-      //         },
-      //       ],
-      //     },
-      //   ],
-      //   raw: true,
-      // });
       const rows = await Product_Variant.findAll({
         where: { product_id },
         attributes: [
@@ -368,6 +328,7 @@ exports.productService = {
           "skuCode",
           "variant_label",
           "tax_type",
+          "barcode",
           "tax_value",
           "discount_type",
           "discount_value",
@@ -414,6 +375,7 @@ exports.productService = {
             product_variant_id: row.product_variant_id,
             price: row.price,
             skuCode: row.skuCode,
+            barcode: row.barcode,
             variant_label: row.variant_label,
             tax_type: row.tax_type,
             tax_value: row.tax_value,
@@ -497,6 +459,7 @@ exports.productService = {
             tax_type: v.tax_type,
             tax_value: v.tax_value,
             variant_label: "TEMP",
+            barcode: "TEMP",
           },
           { transaction },
         );
@@ -535,15 +498,13 @@ exports.productService = {
           transaction,
         });
 
-        // 4️⃣ Build final label
         const variantLabel = buildVariantLabel(variantAttributes);
+        const barCode = generateBarcode(newVariant.skuCode, variantLabel);
 
-        // 5️⃣ Update variant label
         await newVariant.update(
-          { variant_label: variantLabel },
+          { variant_label: variantLabel, barcode: barCode },
           { transaction },
         );
-
         createdVariants.push(newVariant);
       }
 

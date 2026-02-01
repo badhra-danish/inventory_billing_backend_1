@@ -1,6 +1,5 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../../config/database");
-const { tr, fa } = require("zod/locales");
 
 const Payment = sequelize.define(
   "Payment",

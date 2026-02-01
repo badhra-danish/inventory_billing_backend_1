@@ -179,6 +179,164 @@ exports.salesService = {
       throw error;
     }
   },
+  updateSale: async (sale_id, updatedData) => {
+    const transaction = await sequelize.transaction();
+    try {
+      const {
+        customer_id,
+        date,
+        order_tax,
+        discount,
+        shipping,
+        status,
+        sales_items,
+      } = updatedData;
+
+      const summary = sales_items.reduce(
+        (acc, item) => {
+          const itemSubTotal = item.price * item.quantity;
+
+          acc.sub_total += itemSubTotal;
+          acc.item_tax += item.tax_amount || 0;
+          acc.item_discount += item.discount || 0;
+          acc.items_total += item.total; // item final total
+
+          return acc;
+        },
+        {
+          sub_total: 0,
+          item_tax: 0,
+          item_discount: 0,
+          items_total: 0,
+        },
+      );
+
+      const orderTaxPercent = order_tax || 0;
+      const orderDiscount = discount || 0;
+      const shippingCharge = shipping || 0;
+      const orderTaxAmount = (summary.items_total * orderTaxPercent) / 100;
+      const grand_total =
+        summary.items_total + orderTaxAmount + shippingCharge - orderDiscount;
+
+      let payment_status = "UNPAID";
+      const sale = await Sale.findByPk(sale_id, { transaction });
+      if (Number(sale.paid_amount) === Number(sale.grand_total)) {
+        payment_status = "PAID";
+      } else if (Number(sale.paid_amount) > 0) {
+        payment_status = "PARTIALLY_PAID";
+      }
+
+      await sale.update(
+        {
+          customer_id,
+          sale_date: date,
+          order_tax: orderTaxPercent,
+          discount: orderDiscount,
+          shipping: shippingCharge,
+          status,
+          sub_total: summary.items_total,
+          grand_total: grand_total,
+          paid_amount: sale.paid_amount,
+          due_amount: grand_total - sale.paid_amount,
+          payment_status: payment_status,
+        },
+        { where: { sale_id }, transaction },
+      );
+
+      const existingItems = await SaleItem.findAll({
+        where: { sale_id },
+        transaction,
+      });
+
+      const existingMap = new Map(
+        existingItems.map((item) => [item.sales_item_id, item]),
+      );
+      console.log(existingMap);
+
+      const incomingIds = [];
+
+      for (const item of sales_items) {
+        if (item.sales_item_id && existingMap.has(item.sales_item_id)) {
+          const oldItem = existingMap.get(item.sales_item_id);
+          const qtyDiff = oldItem.quantity - item.quantity;
+
+          // Update stock
+          await Stock.increment(
+            { quantity: qtyDiff },
+            {
+              where: { product_variant_id: item.product_variant_id },
+              transaction,
+            },
+          );
+
+          // Update sale item
+          await SaleItem.update(
+            {
+              product_variant_id: item.product_variant_id,
+              quantity: item.quantity,
+              discount: item.discount,
+              tax: item.tax,
+              tax_amount: item.tax_amount,
+              total: item.total,
+            },
+            { where: { sales_item_id: item.sales_item_id }, transaction },
+          );
+
+          incomingIds.push(item.sales_item_id);
+        } else {
+          // Reduce stock
+          await Stock.decrement(
+            { quantity: item.quantity },
+            {
+              where: { product_variant_id: item.product_variant_id },
+              transaction,
+            },
+          );
+
+          const newItem = await SaleItem.create(
+            {
+              sale_id,
+              product_variant_id: item.product_variant_id,
+              quantity: item.quantity,
+              tax_amount: item.tax_amount,
+              discount: item.discount,
+              tax: item.tax,
+              total: item.total,
+            },
+            { transaction },
+          );
+
+          incomingIds.push(newItem.sales_item_id);
+        }
+      }
+
+      const itemsToDelete = existingItems.filter(
+        (item) => !incomingIds.includes(item.sales_item_id),
+      );
+
+      for (const item of itemsToDelete) {
+        // Restore stock
+        await Stock.increment(
+          { quantity: item.quantity },
+          {
+            where: { product_variant_id: item.product_variant_id },
+            transaction,
+          },
+        );
+
+        await SaleItem.destroy({
+          where: { sales_item_id: item.sales_item_id },
+          transaction,
+        });
+      }
+
+      await transaction.commit();
+      return sale;
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
+  },
 
   updatePaymentOfSale: async (payment_id, paymentData) => {
     const transaction = await sequelize.transaction();
@@ -434,6 +592,64 @@ exports.salesService = {
       throw error;
     }
   },
+  getAllInvoiceInfo: async (offset = 0, limit = 10) => {
+    try {
+      const sales = await Sale.findAll({
+        limit,
+        offset,
+        distinct: true,
+
+        attributes: [
+          "sale_id",
+          "invoice_no",
+          "sale_date",
+          "grand_total",
+          "paid_amount",
+          "due_amount",
+          "payment_status",
+        ],
+
+        include: [
+          {
+            model: Customer,
+            as: "customer",
+            attributes: ["firstName", "lastName"],
+          },
+        ],
+
+        order: [["sale_date", "DESC"]],
+      });
+
+      const totalSale = await Sale.count();
+      const formattedSales = sales.map((sale) => {
+        const saleJson = sale.toJSON();
+
+        return {
+          sale_id: saleJson.sale_id,
+          invoice_no: saleJson.invoice_no,
+          sale_date: saleJson.sale_date,
+          grand_total: saleJson.grand_total,
+          paid_amount: saleJson.paid_amount,
+          due_amount: saleJson.due_amount,
+          payment_status: saleJson.payment_status,
+          customer: saleJson.customer
+            ? {
+                firstName: saleJson.customer.firstName,
+                lastName: saleJson.customer.lastName,
+              }
+            : null,
+        };
+      });
+
+      return {
+        data: formattedSales,
+        count: totalSale,
+      };
+    } catch (error) {
+      console.error("getAllSaleInfo error:", error);
+      throw error;
+    }
+  },
   getSaleById: async (sale_id) => {
     try {
       const sale = await Sale.findOne({
@@ -443,6 +659,7 @@ exports.salesService = {
           "sale_id",
           "invoice_no",
           "sale_date",
+          "sub_total",
           "status",
           "grand_total",
           "order_tax",
@@ -499,6 +716,7 @@ exports.salesService = {
         invoice_no: saleJson.invoice_no,
         sale_date: saleJson.sale_date,
         status: saleJson.status,
+        sub_total: Number(saleJson.sub_total),
         grand_total: Number(saleJson.grand_total),
         order_tax: Number(saleJson.order_tax),
         shipping: Number(saleJson.shipping),

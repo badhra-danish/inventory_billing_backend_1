@@ -9,6 +9,15 @@ exports.createSale = async (req, res) => {
     return error(res, err.message, 400);
   }
 };
+exports.updateSales = async (req, res) => {
+  try {
+    const { sale_id } = req.params;
+    const sale = await salesService.updateSale(sale_id, req.body);
+    return success(res, "Sale Update SuccessFully", sale);
+  } catch (err) {
+    return error(res, err.message, 400);
+  }
+};
 exports.getSaleById = async (req, res) => {
   try {
     const { sale_id } = req.params;
@@ -32,20 +41,21 @@ exports.getAllSalesInfo = async (req, res) => {
     return error(res, err.message, 400);
   }
 };
-// exports.getAllSalesInfo = async (req, res) => {
-//   try {
-//     const { page, limit, offset } = getPagination(req.query);
-//     const sale = await salesService.getAllSaleInfo(offset, limit);
-//     return success(
-//       res,
-//       `${sale.count} sale Fetch Successfully`,
-//       sale.data,
-//       getPageMetaData(page, limit, sale.count),
-//     );
-//   } catch (err) {
-//     return error(res, err.message, 400);
-//   }
-// };
+exports.getAllInvoiceInfo = async (req, res) => {
+  try {
+    const { page, limit, offset } = getPagination(req.query);
+    const invoice = await salesService.getAllInvoiceInfo(offset, limit);
+    return success(
+      res,
+      `${invoice.count} Invoice Fetch Successfully`,
+      invoice.data,
+      getPageMetaData(page, limit, invoice.count),
+    );
+  } catch (err) {
+    return error(res, err.message, 400);
+  }
+};
+
 exports.createPayment = async (req, res) => {
   try {
     const { sale_id } = req.params;

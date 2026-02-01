@@ -25,6 +25,11 @@ const Product_Variant = sequelize.define(
       type: DataTypes.STRING(50),
       allowNull: false,
     },
+    barcode: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true,
+    },
     discount_type: {
       type: DataTypes.ENUM("FIXED", "PERCENTAGE", "NONE"),
       defaultValue: "NONE",

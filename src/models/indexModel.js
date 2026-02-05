@@ -1,3 +1,7 @@
+// user --- //
+const user = require("./Users/User.Model");
+const Shop = require("./Users/Shop.Model");
+
 const Category = require("./Inventory/CategoryModel");
 const SubCategory = require("./Inventory/SubCategoryModel");
 const Brand = require("./Inventory/BrandModel");
@@ -25,7 +29,11 @@ const Stock = require("./Stock/Stock.Model");
 const Sale = require("./Sales/Sales.Model");
 const SaleItem = require("./Sales/Sales_item.Model");
 const Payment = require("./Sales/payment.Model");
+const User = require("./Users/User.Model");
 
+/// ---------  relationship or the Assosiation of the models Users .. --------////
+Shop.hasMany(User, { foreignKey: "shop_id", as: "users" });
+User.belongsTo(Shop, { foreignKey: "shop_id", as: "shop" });
 /// ---------  relationship or the Assosiation of the models --------////
 
 Category.hasMany(SubCategory, {
@@ -135,6 +143,8 @@ SaleItem.belongsTo(Product_Variant, {
   as: "variant",
 });
 module.exports = {
+  Shop,
+  user,
   Category,
   SubCategory,
   Brand,

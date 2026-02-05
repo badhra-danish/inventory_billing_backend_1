@@ -27,4 +27,5 @@ router.put("/updateproduct/:product_id", ProductController.updateProduct);
 
 router.delete("/deletevariant/:variant_id", ProductController.deleteVariant);
 router.delete("/deleteproduct/:product_id", ProductController.deleteProduct);
+
 module.exports = router;

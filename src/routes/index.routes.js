@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
-
+// user
+const userRoutes = require("./users/user.Routes");
 const categoryRoutes = require("./Inventory/Category.routes");
 const subcategoryRoutes = require("./Inventory/SubCategory.routes");
 const brandRoutes = require("./Inventory/Brand.routes");
@@ -15,7 +16,7 @@ const stockRoutes = require("./Stock/Stock.Routes");
 
 // Sales
 const salesRoutes = require("./Sales/sale.Route");
-
+router.use("/auth", userRoutes);
 router.use("/category", categoryRoutes);
 router.use("/subcategory", subcategoryRoutes);
 router.use("/brand", brandRoutes);

@@ -35,7 +35,7 @@ exports.SubCategoryService = {
       }
 
       const updatedSubcategory = await subCategory.update({
-        categoryID: categoryID ?? subCategory.categoryID,
+        category_id: categoryID ?? subCategory.categoryID,
         subCategoryName: subCategoryName ?? subCategory.subCategoryName,
         categoryCode: categoryCode ?? subCategory.categoryCode,
         description: description ?? subCategory.description,

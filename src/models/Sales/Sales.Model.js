@@ -75,6 +75,10 @@ const Sale = sequelize.define(
       type: DataTypes.ENUM("PAID", "UNPAID", "PARTIALLY_PAID", "OVERDUE"),
       defaultValue: "UNPAID",
     },
+    shop_id: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
   },
   {
     tableName: "sales",

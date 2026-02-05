@@ -42,6 +42,10 @@ const PurchaseItem = sequelize.define(
       type: DataTypes.DECIMAL(10, 2),
       defaultValue: 0,
     },
+    shop_id: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
 
     total: {
       type: DataTypes.DECIMAL(10, 2),

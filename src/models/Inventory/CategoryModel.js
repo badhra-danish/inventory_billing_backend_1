@@ -25,7 +25,10 @@ const Category = Sequelize.define(
       allowNull: false,
       unique: true,
     },
-
+    shop_id: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
     status: {
       type: DataTypes.ENUM("ACTIVE", "INACTIVE"),
       defaultValue: "ACTIVE",
@@ -34,7 +37,7 @@ const Category = Sequelize.define(
   {
     tableName: "categories",
     timestamps: true,
-  }
+  },
 );
 
 module.exports = Category;

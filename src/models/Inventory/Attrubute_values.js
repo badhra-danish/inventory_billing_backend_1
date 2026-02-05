@@ -18,10 +18,14 @@ const Attribute_values = Sequelize.define(
       allowNull: false,
       field: "attribute_id",
     },
+    shop_id: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
   },
   {
     tableName: "attributeValues",
     timestamps: true,
-  }
+  },
 );
 module.exports = Attribute_values;

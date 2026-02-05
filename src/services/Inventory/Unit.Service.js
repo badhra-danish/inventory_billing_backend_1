@@ -1,7 +1,7 @@
 const { Unit } = require("../../models/indexModel");
 
 exports.unitService = {
-  createUnit: async (unitData) => {
+  createUnit: async (unitData, shop_id) => {
     try {
       const { unitName, unitShortName, status } = unitData;
       if (!unitName || !status || !unitShortName) {
@@ -13,6 +13,7 @@ exports.unitService = {
       const unit = await Unit.create({
         unitName: unitName,
         unitShortName: unitShortName,
+        shop_id: shop_id,
         status: status,
       });
       return unit;

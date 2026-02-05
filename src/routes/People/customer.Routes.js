@@ -1,11 +1,18 @@
 const express = require("express");
 const router = express.Router();
 const CustomerController = require("../../controllers/People/Customer.Controller");
+const { auth } = require("../../middlewares/auth");
+const { authorizeRoles } = require("../../middlewares/role");
 
-router.post("/create", CustomerController.createCustomer);
+router.post(
+  "/create",
+  auth,
+  authorizeRoles("SHOP_ADMIN"),
+  CustomerController.createCustomer,
+);
 router.put("/update/:customerID", CustomerController.updateCustomer);
 router.delete("/delete/:customerID", CustomerController.deleteCustomer);
-router.get("/getcustomerpage", CustomerController.getCustomerPage);
-router.get("/getallcustomer", CustomerController.getAllCustomer);
+router.get("/getcustomerpage", auth, CustomerController.getCustomerPage);
+router.get("/getallcustomer", auth, CustomerController.getAllCustomer);
 
 module.exports = router;

@@ -46,6 +46,10 @@ const SubCategory = sequelize.define(
         }
       },
     },
+    shop_id: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
     status: {
       type: DataTypes.ENUM("ACTIVE", "INACTIVE"),
       defaultValue: "ACTIVE",
@@ -54,6 +58,6 @@ const SubCategory = sequelize.define(
   {
     tableName: "subcategories",
     timestamps: true,
-  }
+  },
 );
 module.exports = SubCategory;

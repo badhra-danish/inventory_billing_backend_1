@@ -18,6 +18,10 @@ const Brand = Sequelize.define(
         len: [2, 100],
       },
     },
+    shop_id: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
     status: {
       type: DataTypes.ENUM("ACTIVE", "INACTIVE"),
       defaultValue: "ACTIVE",
@@ -26,6 +30,6 @@ const Brand = Sequelize.define(
   {
     tableName: "brands",
     timestamps: true,
-  }
+  },
 );
 module.exports = Brand;

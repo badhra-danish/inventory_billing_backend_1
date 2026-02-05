@@ -19,6 +19,10 @@ const Stock = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
     },
+    shop_id: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
     status: {
       type: DataTypes.ENUM("INSTOCK", "OUTSTOCK"),
       defaultValue: "INSTOCK",

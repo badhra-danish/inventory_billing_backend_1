@@ -1,9 +1,16 @@
 const SaleController = require("../../controllers/Sales/Sales.controller");
 const express = require("express");
+const { auth } = require("../../middlewares/auth");
+const { authorizeRoles } = require("../../middlewares/role");
 const router = express.Router();
 
-router.post("/create", SaleController.createSale);
-router.post("/createPayment/:sale_id", SaleController.createPayment);
+router.post(
+  "/create",
+  auth,
+  authorizeRoles("SHOP_ADMIN"),
+  SaleController.createSale,
+);
+router.post("/createPayment/:sale_id", auth, SaleController.createPayment);
 router.put("/update/:sale_id", SaleController.updateSales);
 router.get("/getallsale", SaleController.getAllSalesInfo);
 router.get("/getallinvoice", SaleController.getAllInvoiceInfo);

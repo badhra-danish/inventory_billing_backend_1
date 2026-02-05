@@ -4,7 +4,7 @@ const { Category } = require("../../models/indexModel");
 const { th } = require("zod/locales");
 
 exports.SubCategoryService = {
-  createSubcategory: async (subCategoryData) => {
+  createSubcategory: async (subCategoryData, shop_id) => {
     const { category_id, subCategoryName, categoryCode, description, status } =
       subCategoryData;
 
@@ -19,6 +19,7 @@ exports.SubCategoryService = {
       subCategoryName,
       categoryCode,
       description,
+      shop_id: shop_id,
       status,
     });
     return subcategory;
@@ -56,10 +57,10 @@ exports.SubCategoryService = {
       throw error;
     }
   },
-  getSubCategoryByCategory: async (categoryID) => {
+  getSubCategoryByCategory: async (categoryID, shop_id) => {
     try {
       const subCategories = await SubCategory.findAll({
-        where: { category_id: categoryID },
+        where: { category_id: categoryID, shop_id },
       });
 
       // if (subCategories.length === 0) {

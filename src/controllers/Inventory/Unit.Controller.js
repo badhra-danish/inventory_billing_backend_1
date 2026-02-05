@@ -5,7 +5,8 @@ const { getPagination, getPageMetaData } = require("../../utils/Pagination");
 
 exports.createUnit = async (req, res) => {
   try {
-    const unit = await unitService.createUnit(req.body);
+    const shop_id = req.user.shop_id;
+    const unit = await unitService.createUnit(req.body, shop_id);
 
     return success(res, "Unit Create Successfully", unit);
   } catch (err) {
@@ -35,19 +36,21 @@ exports.deleteUnit = async (req, res) => {
 
 exports.getUnitPage = async (req, res) => {
   try {
+    const shop_id = req.user.shop_id;
     const { page, limit, offset } = getPagination(req.query);
 
     const unitData = await Unit.findAndCountAll({
       limit,
       offset,
       order: [["createdAt", "DESC"]],
+      where: { shop_id },
     });
 
     return success(
       res,
       `${limit} Unit Fetched`,
       unitData.rows,
-      getPageMetaData(page, limit, unitData.count)
+      getPageMetaData(page, limit, unitData.count),
     );
   } catch (err) {
     return error(res, err.message);

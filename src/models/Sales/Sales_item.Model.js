@@ -39,6 +39,10 @@ const SaleItem = sequelize.define(
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
     },
+    shop_id: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
   },
   {
     tableName: "sale_items",

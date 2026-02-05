@@ -19,10 +19,14 @@ const Product_variant_Attribute = sequelize.define(
       allowNull: false,
       field: "product_variant_id",
     },
+    shop_id: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
   },
   {
     tableName: "product_variant_attributes",
     timestamps: true,
-  }
+  },
 );
 module.exports = Product_variant_Attribute;

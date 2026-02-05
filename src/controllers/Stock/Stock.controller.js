@@ -4,7 +4,8 @@ const { getPagination, getPageMetaData } = require("../../utils/Pagination");
 
 exports.createStock = async (req, res) => {
   try {
-    const stock = await stockService.createStock(req.body);
+    const shop_id = req.user.shop_id;
+    const stock = await stockService.createStock(req.body, shop_id);
     return success(res, "Stock Created SuccessFully", stock);
   } catch (err) {
     return error(res, err.message, 400);
@@ -24,8 +25,13 @@ exports.updateStockQuantity = async (req, res) => {
 };
 exports.getAllStockPage = async (req, res) => {
   try {
+    const shop_id = req.user.shop_id;
     const { page, limit, offset } = getPagination(req.query);
-    const stockVarint = await stockService.getAllStockVariant(limit, offset);
+    const stockVarint = await stockService.getAllStockVariant(
+      limit,
+      offset,
+      shop_id,
+    );
     return success(
       res,
       `${stockVarint.count} Stock Fetch Successfully`,

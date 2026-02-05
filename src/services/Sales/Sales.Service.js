@@ -13,7 +13,7 @@ const {
 const { or } = require("sequelize");
 
 exports.salesService = {
-  createSale: async (salesData) => {
+  createSale: async (salesData, shop_id) => {
     const transaction = await sequelize.transaction();
     try {
       const { invoiceNo } = await generateInvoiceNo(transaction);
@@ -67,6 +67,7 @@ exports.salesService = {
           grand_total: grand_total,
           paid_amount: 0,
           due_amount: grand_total,
+          shop: shop_id,
           payment_status: "UNPAID",
         },
         { transaction },
@@ -80,6 +81,7 @@ exports.salesService = {
         tax: s.tax || 0,
         tax_amount: s.tax_amount || 0,
         total: s.total,
+        shop: shop_id,
       }));
 
       await SaleItem.bulkCreate(salesItemsToCreate, { transaction });
@@ -157,6 +159,7 @@ exports.salesService = {
           payment_date,
           reference_no: sale.invoice_no,
           note,
+          shop: req.shop_id,
         },
         { transaction },
       );
@@ -480,13 +483,13 @@ exports.salesService = {
     }
   },
 
-  getAllSaleInfo: async (offset = 0, limit = 10) => {
+  getAllSaleInfo: async (offset = 0, limit = 10, shop_id) => {
     try {
       const sales = await Sale.findAll({
         limit,
         offset,
         distinct: true,
-
+        where: { shop_id },
         attributes: [
           "sale_id",
           "invoice_no",
@@ -592,13 +595,13 @@ exports.salesService = {
       throw error;
     }
   },
-  getAllInvoiceInfo: async (offset = 0, limit = 10) => {
+  getAllInvoiceInfo: async (offset = 0, limit = 10, shop_id) => {
     try {
       const sales = await Sale.findAll({
         limit,
         offset,
         distinct: true,
-
+        where: { shop_id },
         attributes: [
           "sale_id",
           "invoice_no",

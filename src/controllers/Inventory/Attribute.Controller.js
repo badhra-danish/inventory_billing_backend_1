@@ -7,7 +7,8 @@ const { Attribute, AttributeValues } = require("../../models/indexModel");
 
 exports.createAttribute = async (req, res) => {
   try {
-    const attribute = await attributeService.createAttribute(req.body);
+    const shop_id = req.user.shop_id;
+    const attribute = await attributeService.createAttribute(req.body, shop_id);
     return success(res, "Attribute created Successfully", attribute);
   } catch (err) {
     return error(res, err.message, 400);
@@ -19,7 +20,7 @@ exports.updateAttribute = async (req, res) => {
     const { attributeID } = req.params;
     const updatedAttribute = await attributeService.updateAttribute(
       attributeID,
-      req.body
+      req.body,
     );
     return success(res, "Attributed Updated Successfully", updatedAttribute);
   } catch (err) {
@@ -40,11 +41,12 @@ exports.deleteAttribute = async (req, res) => {
 exports.getAttributePage = async (req, res) => {
   try {
     const { page, limit, offset } = getPagination(req.query);
-
+    const shop_id = req.user.shop_id;
     const AttributePage = await Attribute.findAndCountAll({
       distinct: true,
       limit,
       offset,
+      where: { shop_id },
       order: [["createdAt", "DESC"]],
       include: [
         {
@@ -60,7 +62,7 @@ exports.getAttributePage = async (req, res) => {
       res,
       `${limit} Attribute Fetched`,
       AttributePage.rows,
-      getPageMetaData(page, limit, AttributePage.count)
+      getPageMetaData(page, limit, AttributePage.count),
     );
   } catch (err) {
     return error(res, err.message);

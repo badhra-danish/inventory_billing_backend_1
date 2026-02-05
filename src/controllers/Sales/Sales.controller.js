@@ -3,7 +3,8 @@ const { success, error } = require("../../utils/response");
 const { getPagination, getPageMetaData } = require("../../utils/Pagination");
 exports.createSale = async (req, res) => {
   try {
-    const sale = await salesService.createSale(req.body);
+    const shop_id = req.user.shop_id;
+    const sale = await salesService.createSale(req.body, shop_id);
     return success(res, "Sale Created SuccessFully", sale);
   } catch (err) {
     return error(res, err.message, 400);
@@ -29,8 +30,9 @@ exports.getSaleById = async (req, res) => {
 };
 exports.getAllSalesInfo = async (req, res) => {
   try {
+    const shop_id = req.user.shop_id;
     const { page, limit, offset } = getPagination(req.query);
-    const sale = await salesService.getAllSaleInfo(offset, limit);
+    const sale = await salesService.getAllSaleInfo(offset, limit, shop_id);
     return success(
       res,
       `${sale.count} sale Fetch Successfully`,
@@ -43,8 +45,13 @@ exports.getAllSalesInfo = async (req, res) => {
 };
 exports.getAllInvoiceInfo = async (req, res) => {
   try {
+    const shop_id = req.user.shop_id;
     const { page, limit, offset } = getPagination(req.query);
-    const invoice = await salesService.getAllInvoiceInfo(offset, limit);
+    const invoice = await salesService.getAllInvoiceInfo(
+      offset,
+      limit,
+      shop_id,
+    );
     return success(
       res,
       `${invoice.count} Invoice Fetch Successfully`,

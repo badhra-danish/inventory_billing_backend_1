@@ -7,7 +7,8 @@ const { success, error } = require("../../utils/response");
 
 exports.createCategory = async (req, res) => {
   try {
-    const category = await categoryService.createCategory(req.body);
+    const shop_id = req.user.shop_id;
+    const category = await categoryService.createCategory(req.body, shop_id);
     return success(res, "Category Created", category, 201);
   } catch (err) {
     return error(res, err.message, 400);
@@ -20,7 +21,7 @@ exports.updateCategory = async (req, res) => {
 
     const updatedCategory = await categoryService.updateCategory(
       category_id,
-      req.body
+      req.body,
     );
     return success(res, "Category Updated", updatedCategory, 200);
   } catch (err) {
@@ -38,11 +39,13 @@ exports.deleteCategory = async (req, res) => {
 };
 exports.getCategoryPage = async (req, res) => {
   try {
+    const shop_id = req.user.shop_id;
     const { page, limit, offset } = getPagination(req.query);
 
     const category = await Category.findAndCountAll({
       limit,
       offset,
+      where: { shop_id },
       order: [["createdAt", "DESC"]],
     });
 
@@ -50,7 +53,7 @@ exports.getCategoryPage = async (req, res) => {
       res,
       `${limit} Category Fetched`,
       category.rows,
-      getPageMetaData(page, limit, category.count)
+      getPageMetaData(page, limit, category.count),
     );
   } catch (err) {
     return error(res, err.message);

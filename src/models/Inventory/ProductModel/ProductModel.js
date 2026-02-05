@@ -71,12 +71,16 @@ const Product = sequelize.define(
     expiry_date: {
       type: DataTypes.DATE,
     },
+    shop_id: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
   },
 
   {
     tableName: "products",
     timestamps: true,
-  }
+  },
 );
 
 module.exports = Product;

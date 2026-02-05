@@ -6,7 +6,8 @@ const sequelize = require("../../config/database");
 
 exports.createCustomer = async (req, res) => {
   try {
-    const customer = await customerService.createCustomer(req.body);
+    const shop_id = req.user.shop_id;
+    const customer = await customerService.createCustomer(req.body, shop_id);
     return success(res, "Customer created Successfully", customer);
   } catch (err) {
     return error(res, err.message, 400);
@@ -36,10 +37,11 @@ exports.deleteCustomer = async (req, res) => {
 exports.getCustomerPage = async (req, res) => {
   try {
     const { page, limit, offset } = getPagination(req.query);
-
+    const shop_id = req.user.shop_id;
     const customerData = await Customer.findAndCountAll({
       limit,
       offset,
+      where: { shop_id },
       order: [["createdAt", "DESC"]],
     });
 
@@ -67,7 +69,8 @@ exports.getCustomerPage = async (req, res) => {
 };
 exports.getAllCustomer = async (req, res) => {
   try {
-    const customer = await customerService.getAllCustomer();
+    const shop_id = req.user.shop_id;
+    const customer = await customerService.getAllCustomer(shop_id);
     return success(res, "All Customer Fetched", customer);
   } catch (err) {
     return error(res, err.message, 400);

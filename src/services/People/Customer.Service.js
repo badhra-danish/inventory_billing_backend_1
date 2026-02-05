@@ -1,7 +1,7 @@
 const { Customer } = require("../../models/indexModel");
 
 exports.customerService = {
-  createCustomer: async (customerData) => {
+  createCustomer: async (customerData, shop_id) => {
     try {
       const { firstName, lastName, email, phone, address, location, status } =
         customerData;
@@ -25,6 +25,7 @@ exports.customerService = {
         email: email,
         phone: phone,
         address: address,
+        shop: shop_id,
         location: {
           city: location.city,
           state: location.state,
@@ -92,9 +93,10 @@ exports.customerService = {
       throw error;
     }
   },
-  getAllCustomer: () => {
+  getAllCustomer: (shop_id) => {
     try {
       const customer = Customer.findAll({
+        where: { shop_id },
         attributes: ["customer_id", "firstName", "lastName"],
       });
       return customer;

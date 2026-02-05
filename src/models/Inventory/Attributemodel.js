@@ -19,6 +19,10 @@ const Attribute = Sequelize.define(
         len: [2, 100],
       },
     },
+    shop_id: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
     status: {
       type: DataTypes.ENUM("ACTIVE", "INACTIVE"),
       defaultValue: "ACTIVE",
@@ -27,7 +31,7 @@ const Attribute = Sequelize.define(
   {
     tableName: "attributes",
     timestamps: true,
-  }
+  },
 );
 
 module.exports = Attribute;

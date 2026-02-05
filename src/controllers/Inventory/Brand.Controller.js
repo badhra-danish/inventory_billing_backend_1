@@ -5,7 +5,8 @@ const { getPagination, getPageMetaData } = require("../../utils/Pagination");
 
 exports.createBrands = async (req, res) => {
   try {
-    const brand = await brandService.createBrand(req.body);
+    const shop_id = req.user.shop_id;
+    const brand = await brandService.createBrand(req.body, shop_id);
 
     return success(res, "Brand Create Successfully", brand);
   } catch (err) {
@@ -35,10 +36,11 @@ exports.deleteBrand = async (req, res) => {
 exports.getBrandPage = async (req, res) => {
   try {
     const { page, limit, offset } = getPagination(req.query);
-
+    const shop_id = req.user.shop_id;
     const BrandData = await Brand.findAndCountAll({
       limit,
       offset,
+      where: { shop_id },
       order: [["createdAt", "DESC"]],
     });
 
@@ -46,7 +48,7 @@ exports.getBrandPage = async (req, res) => {
       res,
       `${limit} Brand Fetched`,
       BrandData.rows,
-      getPageMetaData(page, limit, BrandData.count)
+      getPageMetaData(page, limit, BrandData.count),
     );
   } catch (err) {
     return error(res, err.message);

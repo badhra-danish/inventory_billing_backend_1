@@ -80,6 +80,10 @@ const Supplier = sequelize.define(
         notEmpty: { msg: "Location is required" },
       },
     },
+    shop_id: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
     status: {
       type: DataTypes.ENUM("ACTIVE", "INACTIVE"),
       defaultValue: "ACTIVE",
@@ -88,7 +92,7 @@ const Supplier = sequelize.define(
   {
     tableName: "suppliers",
     timestamps: true,
-  }
+  },
 );
 
 module.exports = Supplier;

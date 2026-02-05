@@ -7,7 +7,8 @@ const { getPagination, getPageMetaData } = require("../../utils/Pagination");
 
 exports.createWarranty = async (req, res) => {
   try {
-    const warranty = await warrantyService.createWarranty(req.body);
+    const shop_id = req.user.shop_id;
+    const warranty = await warrantyService.createWarranty(req.body, shop_id);
     return success(res, "Warranty Created Sucessfully", warranty);
   } catch (err) {
     return error(res, err.message, 400);
@@ -19,7 +20,7 @@ exports.updateWarranty = async (req, res) => {
     const { warrantyID } = req.params;
     const updatedWarranty = await warrantyService.updateWarranty(
       warrantyID,
-      req.body
+      req.body,
     );
     return success(res, "Warranty Updated Successully", updatedWarranty);
   } catch (err) {
@@ -39,9 +40,11 @@ exports.deleteWarranty = async (req, res) => {
 
 exports.getWarrantyPage = async (req, res) => {
   try {
+    const shop_id = req.user.shop_id;
     const { page, limit, offset } = getPagination(req.query);
 
     const warrantyData = await Warranty.findAndCountAll({
+      where: { shop_id },
       limit,
       offset,
       order: [["createdAt", "DESC"]],
@@ -51,7 +54,7 @@ exports.getWarrantyPage = async (req, res) => {
       res,
       `${limit} Warranty Fetched`,
       warrantyData.rows,
-      getPageMetaData(page, limit, warrantyData.count)
+      getPageMetaData(page, limit, warrantyData.count),
     );
   } catch (err) {
     return error(res, err.message);

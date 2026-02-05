@@ -1,16 +1,28 @@
 const SubCategoryController = require("../../controllers/Inventory/SubCategory.Controller");
 const express = require("express");
+const { authorizeRoles } = require("../../middlewares/role");
+const { auth } = require("../../middlewares/auth");
 const router = express.Router();
 
-router.post("/create", SubCategoryController.createSubcategory);
+router.post(
+  "/create",
+  auth,
+  authorizeRoles("SHOP_ADMIN"),
+  SubCategoryController.createSubcategory,
+);
 router.put("/update/:subCategoryID", SubCategoryController.updateSubcategory);
 router.delete(
   "/delete/:subCategoryID",
-  SubCategoryController.deleteSubCategory
+  SubCategoryController.deleteSubCategory,
 );
-router.get("/getSubCategoryPage", SubCategoryController.getSubCategoryPage);
+router.get(
+  "/getSubCategoryPage",
+  auth,
+  SubCategoryController.getSubCategoryPage,
+);
 router.get(
   "/getsubcategorybycategory/:category_id",
-  SubCategoryController.getSubcategoryByCategory
+  auth,
+  SubCategoryController.getSubcategoryByCategory,
 );
 module.exports = router;

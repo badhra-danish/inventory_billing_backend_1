@@ -8,8 +8,10 @@ const { success, error } = require("../../utils/response");
 
 exports.createSubcategory = async (req, res) => {
   try {
+    const shop_id = req.user.shop_id;
     const subcategoryData = await SubCategoryService.createSubcategory(
-      req.body
+      req.body,
+      shop_id,
     );
     return success(res, "SubCategory Created Successfully", subcategoryData);
   } catch (err) {
@@ -22,7 +24,7 @@ exports.updateSubcategory = async (req, res) => {
     const { subCategoryID } = req.params;
     const updateSubCategory = await SubCategoryService.updateSubCategory(
       subCategoryID,
-      req.body
+      req.body,
     );
 
     return success(res, "subCategory Updated Successfully", updateSubCategory);
@@ -41,12 +43,14 @@ exports.deleteSubCategory = async (req, res) => {
 };
 exports.getSubCategoryPage = async (req, res) => {
   try {
+    const shop_id = req.user.shop_id;
     const { page, limit, offset } = getPagination(req.query);
 
     const SubCategoryData = await SubCategory.findAndCountAll({
       limit,
       offset,
       distinct: true,
+      where: { shop_id },
       order: [["createdAt", "DESC"]],
       attributes: {
         include: [[sequelize.col("category.name"), "categoryName"]],
@@ -64,7 +68,7 @@ exports.getSubCategoryPage = async (req, res) => {
       res,
       `${limit} SubCategory Fetched`,
       SubCategoryData.rows,
-      getPageMetaData(page, limit, SubCategoryData.count)
+      getPageMetaData(page, limit, SubCategoryData.count),
     );
   } catch (err) {
     return error(res, err.message);
@@ -73,8 +77,10 @@ exports.getSubCategoryPage = async (req, res) => {
 exports.getSubcategoryByCategory = async (req, res) => {
   try {
     const { category_id } = req.params;
+    const shop_id = req.user.shop_id;
     const subCategory = await SubCategoryService.getSubCategoryByCategory(
-      category_id
+      category_id,
+      shop_id,
     );
     return success(res, "SubCategory Fetch Successfully", subCategory);
   } catch (err) {

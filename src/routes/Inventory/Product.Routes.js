@@ -5,19 +5,26 @@ const { validate } = require("../../validator/middleware/validate_temp");
 const {
   createProductSchema,
 } = require("../../validator/Product/poduct.schema");
+const { authorizeRoles } = require("../../middlewares/role");
+const { auth } = require("../../middlewares/auth");
 router.post(
   "/create",
+  auth,
   validate(createProductSchema),
+  auth,
+  authorizeRoles("SHOP_ADMIN"),
+
   ProductController.createProduct,
 );
 router.post(
   "/addproductvariant/:product_id",
   ProductController.createVariantofProduct,
 );
-router.get("/getproductpage", ProductController.getProductPage);
-router.get("/getallproduct", ProductController.getAllProduct);
+router.get("/getproductpage", auth, ProductController.getProductPage);
+router.get("/getallproduct", auth, ProductController.getAllProduct);
 router.get(
   "/getallvariantbyproduct/:product_id",
+  auth,
   ProductController.getAllVariantByProduct,
 );
 router.get("/getvariantbysearch", ProductController.getAllVariantBySearch);

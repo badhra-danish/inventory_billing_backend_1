@@ -1,7 +1,7 @@
 const { Brand } = require("../../models/indexModel");
 
 exports.brandService = {
-  createBrand: async (brandData) => {
+  createBrand: async (brandData, shop_id) => {
     try {
       const { brandName, status } = brandData;
       if (!brandName || !status) {
@@ -12,6 +12,7 @@ exports.brandService = {
 
       const brand = await Brand.create({
         brandName: brandName,
+        shop_id: shop_id,
         status: status,
       });
       return brand;

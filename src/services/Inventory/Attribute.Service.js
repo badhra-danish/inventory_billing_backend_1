@@ -2,7 +2,7 @@ const { Attribute, AttributeValues } = require("../../models/indexModel");
 const sequelize = require("../../config/database");
 
 exports.attributeService = {
-  createAttribute: async (attributeData) => {
+  createAttribute: async (attributeData, shop_id) => {
     const transaction = await sequelize.transaction();
     try {
       const { attributeName, status, attributeValues } = attributeData;
@@ -12,15 +12,17 @@ exports.attributeService = {
       const attribute = await Attribute.create(
         {
           attributeName: attributeName,
+          shop_id: shop_id,
           status: status,
         },
-        { transaction }
+        { transaction },
       );
 
       if (attributeValues && attributeValues.length > 0) {
         const attributeValueData = attributeValues.map((val) => ({
           value: val.value,
           attribute_id: attribute.attribute_id,
+          shop_id: shop_id,
         }));
         await AttributeValues.bulkCreate(attributeValueData, { transaction });
       }
@@ -36,7 +38,7 @@ exports.attributeService = {
             },
           ],
           transaction,
-        }
+        },
       );
       await transaction.commit();
 
@@ -60,7 +62,7 @@ exports.attributeService = {
           attributeName: attributeName,
           status: status,
         },
-        { transaction }
+        { transaction },
       );
 
       if (Array.isArray(attributeValues)) {
@@ -79,7 +81,7 @@ exports.attributeService = {
               {
                 where: { attribute_value_id: val.attribute_value_id },
                 transaction,
-              }
+              },
             );
             continue;
           }
@@ -89,7 +91,7 @@ exports.attributeService = {
               value: val.value,
               attribute_id: attributeID,
             },
-            { transaction }
+            { transaction },
           );
         }
       }
@@ -105,7 +107,7 @@ exports.attributeService = {
             },
           ],
           transaction,
-        }
+        },
       );
       await transaction.commit();
       return attributewithValues;

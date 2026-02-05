@@ -5,7 +5,7 @@ const sequelize = require("../../config/database");
 const { Op } = require("sequelize");
 
 exports.stockService = {
-  createStock: async (stockData) => {
+  createStock: async (stockData, shop_id) => {
     try {
       const { product_variant_id, quantity, status } = stockData;
 
@@ -32,6 +32,7 @@ exports.stockService = {
         product_variant_id,
         quantity: parsedQty,
         status,
+        shop: shop_id,
       });
 
       return stock;
@@ -78,12 +79,13 @@ exports.stockService = {
       throw error;
     }
   },
-  getAllStockVariant: async (limit, offset) => {
+  getAllStockVariant: async (limit, offset, shop_id) => {
     try {
       const stockVariant = await Stock.findAll({
         limit,
         offset,
         distinct: true,
+        where: { shop_id },
         attributes: [
           ["stock_id", "stock_id"],
           ["quantity", "quantity"],

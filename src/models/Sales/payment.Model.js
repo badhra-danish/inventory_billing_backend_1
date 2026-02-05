@@ -30,6 +30,10 @@ const Payment = sequelize.define(
       type: DataTypes.STRING,
       allowNull: false,
     },
+    shop_id: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
     note: {
       type: DataTypes.TEXT,
       allowNull: true,

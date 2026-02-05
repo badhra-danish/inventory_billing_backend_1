@@ -1,7 +1,7 @@
 const { Supplier } = require("../../models/indexModel");
 
 exports.supplierService = {
-  createSupplier: async (supplierData) => {
+  createSupplier: async (supplierData, shop_id) => {
     try {
       const { firstName, lastName, email, phone, address, location, status } =
         supplierData;
@@ -25,6 +25,7 @@ exports.supplierService = {
         email: email,
         phone: phone,
         address: address,
+        shop: shop_id,
         location: {
           city: location.city,
           state: location.state,

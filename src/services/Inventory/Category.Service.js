@@ -2,15 +2,20 @@ const { Category } = require("../../models/indexModel");
 
 exports.categoryService = {
   //create Service
-  createCategory: async (data) => {
+  createCategory: async (data, shop_id) => {
     try {
-      const { name } = data;
+      const { name, slug, status } = data;
       console.log(name);
 
       const exists = await Category.findOne({ where: { name } });
       if (exists) throw new Error("Category_Exits");
 
-      return await Category.create(data);
+      return await Category.create({
+        name: name,
+        slug: slug,
+        status: status,
+        shop_id: shop_id,
+      });
     } catch (error) {
       throw error;
     }

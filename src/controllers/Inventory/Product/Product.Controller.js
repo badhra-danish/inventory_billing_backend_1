@@ -17,7 +17,8 @@ const {
 } = require("../../../models/indexModel");
 exports.createProduct = async (req, res) => {
   try {
-    const product = await productService.createProduct(req.body);
+    const shop_id = req.user.shop_id;
+    const product = await productService.createProduct(req.body, shop_id);
     return success(res, "Product Create Successfully", product);
   } catch (err) {
     return error(res, err.message, 400);
@@ -26,11 +27,12 @@ exports.createProduct = async (req, res) => {
 exports.getProductPage = async (req, res) => {
   try {
     const { page, limit, offset } = getPagination(req.query);
-
+    const shop_id = req.user.shop_id;
     const product = await Product.findAndCountAll({
       limit,
       offset,
       distinct: true,
+      where: { shop_id },
       include: [
         { model: Brand, attributes: ["brandName"], as: "brand" },
         { model: Unit, attributes: ["unitName"], as: "unit" },
@@ -83,8 +85,8 @@ exports.getProductPage = async (req, res) => {
 exports.getAllProduct = async (req, res) => {
   try {
     const { page, limit, offset } = getPagination(req.query);
-
-    const product = await productService.getAllProduct(limit, offset);
+    const shop_id = req.user.shop_id;
+    const product = await productService.getAllProduct(limit, offset, shop_id);
     return success(
       res,
       `${limit} Product Fetched`,
@@ -99,8 +101,11 @@ exports.getAllProduct = async (req, res) => {
 exports.getAllVariantByProduct = async (req, res) => {
   try {
     const { product_id } = req.params;
-    const productVariant =
-      await productService.getAllVariantByProduct(product_id);
+    const shop_id = req.user.shop_id;
+    const productVariant = await productService.getAllVariantByProduct(
+      product_id,
+      shop_id,
+    );
     return success(res, "Fetch All Variant SuccessFully", productVariant);
   } catch (err) {
     return error(res, err.message, 400);

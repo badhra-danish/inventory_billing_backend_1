@@ -41,6 +41,10 @@ const Warranty = Sequelize.define(
         }
       },
     },
+    shop_id: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
     status: {
       type: DataTypes.ENUM("ACTIVE", "INACTIVE"),
       defaultValue: "ACTIVE",
@@ -49,7 +53,7 @@ const Warranty = Sequelize.define(
   {
     tableName: "warranties",
     timestamps: true,
-  }
+  },
 );
 
 module.exports = Warranty;

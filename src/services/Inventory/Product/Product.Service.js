@@ -18,7 +18,7 @@ const {
   generateBarcode,
 } = require("../../../utils/VariantLabelBulder");
 exports.productService = {
-  createProduct: async (productData) => {
+  createProduct: async (productData, shop_id) => {
     const transaction = await sequelize.transaction();
     try {
       const { product, productVariants } = productData;
@@ -38,6 +38,7 @@ exports.productService = {
           subcategory_id: product.subcategory_id,
           unit_id: product.unit_id,
           warranty_id: product.warranty_id,
+          shop_id: shop_id,
         },
         { transaction },
       );
@@ -74,28 +75,28 @@ exports.productService = {
             product_id: newProduct.product_id,
             price: v.price,
             skuCode: v.skuCode,
-            discount_type: v.discount_type,
-            discount_value: v.discount_value,
-            tax_type: v.tax_type,
-            tax_value: v.tax_value,
+            discount_type: v.discount_type || "NONE",
+            discount_value: v.discount_value || 0,
+            tax_type: v.tax_type || "NONE",
+            tax_value: v.tax_value || 0,
             barcode: "temp",
             variant_label: "temp",
+            shop_id: shop_id,
           },
           { transaction },
         );
 
-        // 1️⃣ Create Attribute Relations
         if (v.attribute_value_ids && v.attribute_value_ids.length > 0) {
           const attributeRow = v.attribute_value_ids.map((id) => ({
             product_variant_id: newVariant.product_variant_id,
             attribute_value_id: id,
+            shop_id: shop_id,
           }));
 
           await Product_variant_Attribute.bulkCreate(attributeRow, {
             transaction,
           });
 
-          // 2️⃣ Fetch Attributes for Label
           const variantAttributes = await Product_variant_Attribute.findAll({
             where: {
               product_variant_id: newVariant.product_variant_id,
@@ -233,11 +234,12 @@ exports.productService = {
       throw error;
     }
   },
-  getAllProduct: async (limit, offset) => {
+  getAllProduct: async (limit, offset, shop_id) => {
     try {
       const product = await Product.findAll({
         limit,
         offset,
+        where: { shop_id },
         distinct: true,
         attributes: [
           ["product_id", "product_id"],
@@ -318,10 +320,10 @@ exports.productService = {
     }
   },
 
-  getAllVariantByProduct: async (product_id) => {
+  getAllVariantByProduct: async (product_id, shop_id) => {
     try {
       const rows = await Product_Variant.findAll({
-        where: { product_id },
+        where: { product_id, shop_id },
         attributes: [
           "product_variant_id",
           "price",

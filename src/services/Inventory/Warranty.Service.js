@@ -2,7 +2,7 @@ const { NUMBER } = require("sequelize");
 const { Warranty } = require("../../models/indexModel");
 
 exports.warrantyService = {
-  createWarranty: async (warrantyData) => {
+  createWarranty: async (warrantyData, shop_id) => {
     try {
       const { warrantyName, duration, period, description, status } =
         warrantyData;
@@ -22,6 +22,7 @@ exports.warrantyService = {
         duration,
         period,
         description: description?.trim() ?? null,
+        shop_id: shop_id,
         status,
       });
     } catch (error) {

@@ -1,9 +1,16 @@
 const CategoryController = require("../../controllers/Inventory/Category.Controller");
 const express = require("express");
+const { auth } = require("../../middlewares/auth");
+const { authorizeRoles } = require("../../middlewares/role");
 const router = express.Router();
 
-router.get("/getCategoryPage", CategoryController.getCategoryPage);
-router.post("/create", CategoryController.createCategory);
+router.get("/getCategoryPage", auth, CategoryController.getCategoryPage);
+router.post(
+  "/create",
+  auth,
+  authorizeRoles("SHOP_ADMIN"),
+  CategoryController.createCategory,
+);
 router.put("/update/:category_id", CategoryController.updateCategory);
 router.delete("/delete/:category_id", CategoryController.deleteCategory);
 module.exports = router;

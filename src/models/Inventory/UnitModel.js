@@ -27,6 +27,10 @@ const Unit = Sequelize.define(
         len: [1, 10],
       },
     },
+    shop_id: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
     status: {
       type: DataTypes.ENUM("ACTIVE", "INACTIVE"),
       defaultValue: "ACTIVE",
@@ -35,6 +39,6 @@ const Unit = Sequelize.define(
   {
     tableName: "units",
     timestamps: true,
-  }
+  },
 );
 module.exports = Unit;

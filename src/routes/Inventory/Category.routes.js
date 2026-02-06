@@ -11,6 +11,6 @@ router.post(
   authorizeRoles("SHOP_ADMIN"),
   CategoryController.createCategory,
 );
-router.put("/update/:category_id", CategoryController.updateCategory);
-router.delete("/delete/:category_id", CategoryController.deleteCategory);
+router.put("/update/:category_id", auth, CategoryController.updateCategory);
+router.delete("/delete/:category_id", auth, CategoryController.deleteCategory);
 module.exports = router;

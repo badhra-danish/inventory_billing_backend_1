@@ -18,9 +18,11 @@ exports.createWarranty = async (req, res) => {
 exports.updateWarranty = async (req, res) => {
   try {
     const { warrantyID } = req.params;
+    const shop_id = req.user.shop_id;
     const updatedWarranty = await warrantyService.updateWarranty(
       warrantyID,
       req.body,
+      shop_id,
     );
     return success(res, "Warranty Updated Successully", updatedWarranty);
   } catch (err) {
@@ -30,8 +32,9 @@ exports.updateWarranty = async (req, res) => {
 
 exports.deleteWarranty = async (req, res) => {
   try {
+    const shop_id = req.user.shop_id;
     const { warrantyID } = req.params;
-    await warrantyService.deleteWarranty(warrantyID);
+    await warrantyService.deleteWarranty(warrantyID, shop_id);
     return success(res, "Warranty Deleted Successully");
   } catch (err) {
     return error(res, err.message, 400);

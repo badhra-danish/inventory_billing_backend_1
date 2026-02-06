@@ -10,8 +10,8 @@ router.post(
   authorizeRoles("SHOP_ADMIN"),
   CustomerController.createCustomer,
 );
-router.put("/update/:customerID", CustomerController.updateCustomer);
-router.delete("/delete/:customerID", CustomerController.deleteCustomer);
+router.put("/update/:customerID", auth, CustomerController.updateCustomer);
+router.delete("/delete/:customerID", auth, CustomerController.deleteCustomer);
 router.get("/getcustomerpage", auth, CustomerController.getCustomerPage);
 router.get("/getallcustomer", auth, CustomerController.getAllCustomer);
 

@@ -113,8 +113,10 @@ exports.getAllVariantByProduct = async (req, res) => {
 };
 exports.getAllVariantBySearch = async (req, res) => {
   try {
+    const shop_id = req.user.shop_id;
     const productVariant = await productService.getAllVariantBySearch(
       req.query,
+      shop_id,
     );
     return success(res, "Fetch All Variant SuccessFully", productVariant);
   } catch (err) {
@@ -124,9 +126,11 @@ exports.getAllVariantBySearch = async (req, res) => {
 exports.updateProduct = async (req, res) => {
   try {
     const { product_id } = req.params;
+    const shop_id = req.user.shop_id;
     const updatedProduct = await productService.updateProductInfo(
       product_id,
       req.body,
+      shop_id,
     );
     return success(res, "Product Update Successfully", updatedProduct);
   } catch (err) {
@@ -136,9 +140,12 @@ exports.updateProduct = async (req, res) => {
 exports.updateVariant = async (req, res) => {
   try {
     const { variant_id } = req.params;
+    const shop_id = req.user.shop_id;
+
     const updateVariant = await productService.updateVariant(
       variant_id,
       req.body,
+      shop_id,
     );
     return success(res, "Variant Upadate Successfully", updateVariant);
   } catch (err) {
@@ -148,10 +155,11 @@ exports.updateVariant = async (req, res) => {
 exports.createVariantofProduct = async (req, res) => {
   try {
     const { product_id } = req.params;
-
+    const shop_id = req.user.shop_id;
     const newVariant = await productService.createVariantofProduct(
       product_id,
       req.body,
+      shop_id,
     );
     return success(res, "Variant Add SuccessFully", newVariant);
   } catch (err) {
@@ -160,8 +168,9 @@ exports.createVariantofProduct = async (req, res) => {
 };
 exports.deleteVariant = async (req, res) => {
   try {
+    const shop_id = req.user.shop_id;
     const { variant_id } = req.params;
-    await productService.deleteVariant(variant_id);
+    await productService.deleteVariant(variant_id, shop_id);
     return success(res, "Variant Deleted SuccessFully");
   } catch (err) {
     return error(res, err.message);
@@ -170,7 +179,8 @@ exports.deleteVariant = async (req, res) => {
 exports.deleteProduct = async (req, res) => {
   try {
     const { product_id } = req.params;
-    await productService.deleteProduct(product_id);
+    const shop_id = req.user.shop_id;
+    await productService.deleteProduct(product_id, shop_id);
     return success(res, "Product Deleted SuccessFully");
   } catch (err) {
     return error(res, err.message);

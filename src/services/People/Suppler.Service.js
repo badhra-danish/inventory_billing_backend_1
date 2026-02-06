@@ -25,7 +25,7 @@ exports.supplierService = {
         email: email,
         phone: phone,
         address: address,
-        shop: shop_id,
+        shop_id: shop_id,
         location: {
           city: location.city,
           state: location.state,
@@ -46,7 +46,12 @@ exports.supplierService = {
       const { firstName, lastName, email, phone, address, location, status } =
         updateData;
 
-      const supplier = await Supplier.findByPk(supplierID);
+      const supplier = await Supplier.findOne({
+        where: {
+          supplierID: supplierID,
+          shop_id,
+        },
+      });
       if (!supplier) throw new Error("Customer Not Found");
 
       if (!firstName) throw new Error("First name is required");
@@ -86,7 +91,12 @@ exports.supplierService = {
   },
   deleteSupplier: async (supplierID) => {
     try {
-      const supplier = await Supplier.findByPk(supplierID);
+      const supplier = await Supplier.findOne({
+        where: {
+          supplierID: supplierID,
+          shop_id,
+        },
+      });
       if (!supplier) throw new Error("Customer Not Found");
 
       await supplier.destroy();

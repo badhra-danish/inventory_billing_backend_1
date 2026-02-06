@@ -17,7 +17,12 @@ exports.createBrands = async (req, res) => {
 exports.updateBrand = async (req, res) => {
   try {
     const { brandID } = req.params;
-    const updatedBrand = await brandService.updateBrand(brandID, req.body);
+    const shop_id = req.user.shop_id;
+    const updatedBrand = await brandService.updateBrand(
+      brandID,
+      req.body,
+      shop_id,
+    );
     return success(res, "Brand Updated Successfully", updatedBrand);
   } catch (err) {
     return error(res.err.message || "something Went wrong", 400);
@@ -27,7 +32,8 @@ exports.updateBrand = async (req, res) => {
 exports.deleteBrand = async (req, res) => {
   try {
     const { brandID } = req.params;
-    await brandService.deleteBrand(brandID);
+    const shop_id = req.user.shop_id;
+    await brandService.deleteBrand(brandID, shop_id);
     return success(res, "Brand Delete Successfully");
   } catch (err) {
     return error(res, err.message || "something Went wrong", 400);

@@ -17,11 +17,12 @@ exports.createCategory = async (req, res) => {
 exports.updateCategory = async (req, res) => {
   try {
     const { category_id } = req.params;
-    console.log("id --", category_id);
+    const shop_id = req.user.shop_id;
 
     const updatedCategory = await categoryService.updateCategory(
       category_id,
       req.body,
+      shop_id,
     );
     return success(res, "Category Updated", updatedCategory, 200);
   } catch (err) {
@@ -31,7 +32,9 @@ exports.updateCategory = async (req, res) => {
 exports.deleteCategory = async (req, res) => {
   try {
     const { category_id } = req.params;
-    await categoryService.deleteCategory(category_id);
+    const shop_id = req.user.shop_id;
+
+    await categoryService.deleteCategory(category_id, shop_id);
     return success(res, "Category Deleted");
   } catch (err) {
     return error(res, err.message);

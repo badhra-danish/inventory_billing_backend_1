@@ -31,12 +31,17 @@ exports.warrantyService = {
     }
   },
 
-  updateWarranty: async (warrantyID, updateData) => {
+  updateWarranty: async (warrantyID, updateData, shop_id) => {
     try {
       const { warrantyName, duration, period, description, status } =
         updateData;
 
-      const warranty = await Warranty.findByPk(warrantyID);
+      const warranty = await Warranty.findOne({
+        where: {
+          warranty_id: warrantyID,
+          shop_id: shop_id,
+        },
+      });
       if (!warranty) throw new Error("Warranty Not Found");
 
       if (!warrantyName?.trim()) throw new Error("Warranty name required");
@@ -62,7 +67,12 @@ exports.warrantyService = {
   },
   deleteWarranty: async (warrantyID) => {
     try {
-      const warranty = await Warranty.findByPk(warrantyID);
+      const warranty = await Warranty.findOne({
+        where: {
+          warranty_id: warrantyID,
+          shop_id: shop_id,
+        },
+      });
       if (!warranty) throw new Error("Warranty Not Found");
       await warranty.destroy();
       return;

@@ -16,9 +16,12 @@ exports.createCustomer = async (req, res) => {
 exports.updateCustomer = async (req, res) => {
   try {
     const { customerID } = req.params;
+    const shop_id = req.user.shop_id;
+
     const updatedCustomer = await customerService.updateCustomer(
       customerID,
       req.body,
+      shop_id,
     );
     return success(res, "Customer Updated Successfully", updatedCustomer);
   } catch (err) {
@@ -28,7 +31,9 @@ exports.updateCustomer = async (req, res) => {
 exports.deleteCustomer = async (req, res) => {
   try {
     const { customerID } = req.params;
-    await customerService.deleteCustomer(customerID);
+    const shop_id = req.user.shop_id;
+
+    await customerService.deleteCustomer(customerID, shop_id);
     return success(res, "Customer Deleted Successfully");
   } catch (err) {
     return error(res, err.message, 400);

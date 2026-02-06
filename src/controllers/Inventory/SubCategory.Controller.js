@@ -22,9 +22,11 @@ exports.createSubcategory = async (req, res) => {
 exports.updateSubcategory = async (req, res) => {
   try {
     const { subCategoryID } = req.params;
+    const shop_id = req.user.shop_id;
     const updateSubCategory = await SubCategoryService.updateSubCategory(
       subCategoryID,
       req.body,
+      shop_id,
     );
 
     return success(res, "subCategory Updated Successfully", updateSubCategory);
@@ -32,15 +34,18 @@ exports.updateSubcategory = async (req, res) => {
     return error(res, err.message, 400);
   }
 };
+
 exports.deleteSubCategory = async (req, res) => {
   try {
     const { subCategoryID } = req.params;
-    await SubCategoryService.deletesubCategory(subCategoryID);
+    const shop_id = req.user.shop_id;
+    await SubCategoryService.deletesubCategory(subCategoryID, shop_id);
     return success(res, "SubCategory Deleted Successfully");
   } catch (err) {
     error(res, err.message);
   }
 };
+
 exports.getSubCategoryPage = async (req, res) => {
   try {
     const shop_id = req.user.shop_id;

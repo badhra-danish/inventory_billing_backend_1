@@ -21,7 +21,7 @@ exports.stockService = {
 
       // Prevent duplicate stock entry
       const existingStock = await Stock.findOne({
-        where: { product_variant_id },
+        where: { product_variant_id, shop_id },
       });
 
       if (existingStock) {
@@ -32,7 +32,7 @@ exports.stockService = {
         product_variant_id,
         quantity: parsedQty,
         status,
-        shop: shop_id,
+        shop_id: shop_id,
       });
 
       return stock;
@@ -41,7 +41,7 @@ exports.stockService = {
       throw error;
     }
   },
-  updateStockQuantity: async (stock_id, updatedData) => {
+  updateStockQuantity: async (stock_id, updatedData, shop_id) => {
     try {
       const { quantity, type } = updatedData;
 
@@ -49,7 +49,12 @@ exports.stockService = {
         throw new Error("Invalid quantity");
       }
 
-      const stock = await Stock.findByPk(stock_id);
+      const stock = await Stock.findOne({
+        where: {
+          stock_id: stock_id,
+          shop_id: shop_id,
+        },
+      });
 
       if (!stock) {
         throw new Error("Stock not found");
@@ -116,6 +121,7 @@ exports.stockService = {
 
       const totalStock = await Stock.count({
         distinct: true,
+        where: { shop_id },
         include: [
           {
             model: Product_Variant,
@@ -138,9 +144,14 @@ exports.stockService = {
       throw error;
     }
   },
-  deleteStockVariant: async (stock_id) => {
+  deleteStockVariant: async (stock_id, shop_id) => {
     try {
-      const stock = await Stock.findByPk(stock_id);
+      const stock = await Stock.findOne({
+        where: {
+          stock_id: stock_id,
+          shop_id: shop_id,
+        },
+      });
       if (!stock) {
         throw new Error("Stock Not Found");
       }
@@ -150,7 +161,7 @@ exports.stockService = {
       throw error;
     }
   },
-  getVariantInStock: async (query) => {
+  getVariantInStock: async (query, shop_id) => {
     try {
       const { q } = query;
       const variant = await Product_Variant.findAll({
@@ -160,6 +171,7 @@ exports.stockService = {
             { variant_label: { [Op.like]: `%${q}%` } },
             { "$product.productName$": { [Op.like]: `%${q}%` } },
           ],
+          shop_id,
         },
         attributes: [
           ["product_variant_id", "product_variant_id"],

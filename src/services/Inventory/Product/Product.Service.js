@@ -1,5 +1,5 @@
 const sequelize = require("../../../config/database");
-const { Op } = require("sequelize");
+const { Op, where } = require("sequelize");
 
 const {
   Product,
@@ -69,23 +69,21 @@ exports.productService = {
       //     });
       //   }
       // }
+      let variantLabel = newProduct.productName;
+
       for (const v of productVariants) {
         const newVariant = await Product_Variant.create(
           {
             product_id: newProduct.product_id,
             price: v.price,
             skuCode: v.skuCode,
-            discount_type: v.discount_type || "NONE",
-            discount_value: v.discount_value || 0,
-            tax_type: v.tax_type || "NONE",
-            tax_value: v.tax_value || 0,
             barcode: "temp",
             variant_label: "temp",
             shop_id: shop_id,
           },
           { transaction },
         );
-
+        let barCode = newVariant.skuCode;
         if (v.attribute_value_ids && v.attribute_value_ids.length > 0) {
           const attributeRow = v.attribute_value_ids.map((id) => ({
             product_variant_id: newVariant.product_variant_id,
@@ -100,6 +98,7 @@ exports.productService = {
           const variantAttributes = await Product_variant_Attribute.findAll({
             where: {
               product_variant_id: newVariant.product_variant_id,
+              shop_id,
             },
             include: [
               {
@@ -119,9 +118,14 @@ exports.productService = {
           });
 
           // Build Variant Label
-          const variantLabel = buildVariantLabel(variantAttributes);
-          const barCode = generateBarcode(newVariant.skuCode, variantLabel);
+          variantLabel = buildVariantLabel(variantAttributes);
+          barCode = generateBarcode(newVariant.skuCode, variantLabel);
 
+          await newVariant.update(
+            { variant_label: variantLabel, barcode: barCode },
+            { transaction },
+          );
+        } else {
           await newVariant.update(
             { variant_label: variantLabel, barcode: barCode },
             { transaction },
@@ -131,7 +135,7 @@ exports.productService = {
 
       const createdProduct = await Product.findByPk(
         newProduct.product_id,
-
+        { where: shop_id },
         {
           transaction,
           include: [
@@ -181,10 +185,20 @@ exports.productService = {
       throw error;
     }
   },
-  updateProductInfo: async (product_id, productData) => {
+  updateProductInfo: async (product_id, productData, shop_id) => {
     try {
       const { updateProductData } = productData;
-      const product = await Product.findByPk(product_id);
+
+      const product = await Product.findOne({
+        where: {
+          product_id,
+          shop_id,
+        },
+      });
+
+      if (!product) {
+        throw new Error("Product not found");
+      }
 
       const updatedProduct = await product.update({
         productName: updateProductData.productName,
@@ -202,32 +216,34 @@ exports.productService = {
         warranty_id: updateProductData.warranty_id,
       });
 
+      await Product_Variant.update(
+        { variant_label: updateProductData.productName },
+        { where: { product_id } },
+      );
+
       return updatedProduct;
     } catch (error) {
+      console.log(error);
       throw error;
     }
   },
-  updateVariant: async (variant_id, upadateVatiantData) => {
+
+  updateVariant: async (variant_id, upadateVatiantData, shop_id) => {
     try {
-      const {
-        skuCode,
-        price,
-        tax_type,
-        tax_value,
-        discount_type,
-        discount_value,
-      } = upadateVatiantData;
-      const product_variant = await Product_Variant.findByPk(variant_id);
+      const { skuCode, price } = upadateVatiantData;
+      const product_variant = await Product_Variant.findOne({
+        where: {
+          product_variant_id: variant_id,
+          shop_id: shop_id,
+        },
+      });
+
       if (!product_variant) {
         throw new Error("Variant Not Found");
       }
       const upadtedVariant = await product_variant.update({
         skuCode,
         price,
-        tax_type,
-        tax_value,
-        discount_type,
-        discount_value,
       });
       return upadtedVariant;
     } catch (error) {
@@ -329,11 +345,7 @@ exports.productService = {
           "price",
           "skuCode",
           "variant_label",
-          "tax_type",
           "barcode",
-          "tax_value",
-          "discount_type",
-          "discount_value",
           [sequelize.col("variant_attributes->value.value"), "attributeValue"],
           [
             sequelize.col("variant_attributes->value->attribute.attributeName"),
@@ -404,7 +416,7 @@ exports.productService = {
       throw error;
     }
   },
-  getAllVariantBySearch: async (q) => {
+  getAllVariantBySearch: async (q, shop_id) => {
     try {
       const { query } = q;
       const variants = await Product_Variant.findAll({
@@ -413,16 +425,13 @@ exports.productService = {
             { skuCode: { [Op.like]: `%${query}%` } },
             { variant_label: { [Op.like]: `%${query}%` } },
           ],
+          shop_id,
         },
         attributes: [
           "product_variant_id",
           "skuCode",
           "price",
           "variant_label",
-          "tax_type",
-          "tax_value",
-          "discount_type",
-          "discount_value",
           [sequelize.col("product.productName"), "productName"],
           [sequelize.col("product.product_id"), "product_id"],
         ],
@@ -443,34 +452,30 @@ exports.productService = {
       throw error;
     }
   },
-  createVariantofProduct: async (product_id, variantData) => {
+  createVariantofProduct: async (product_id, variantData, shop_id) => {
     const transaction = await sequelize.transaction();
     try {
       const { productVariants } = variantData;
       const createdVariants = [];
 
       for (const v of productVariants) {
-        // 1️⃣ Create variant with TEMP label
         const newVariant = await Product_Variant.create(
           {
             product_id,
             price: v.price,
             skuCode: v.skuCode,
-            discount_type: v.discount_type,
-            discount_value: v.discount_value,
-            tax_type: v.tax_type,
-            tax_value: v.tax_value,
+            shop_id: shop_id,
             variant_label: "TEMP",
             barcode: "TEMP",
           },
           { transaction },
         );
 
-        // 2️⃣ Create attribute relations (if any)
         if (v.attribute_value_ids && v.attribute_value_ids.length > 0) {
           const attributeRow = v.attribute_value_ids.map((id) => ({
             product_variant_id: newVariant.product_variant_id,
             attribute_value_id: id,
+            shop_id: shop_id,
           }));
 
           await Product_variant_Attribute.bulkCreate(attributeRow, {
@@ -478,10 +483,10 @@ exports.productService = {
           });
         }
 
-        // 3️⃣ Fetch attributes for label (ALWAYS)
         const variantAttributes = await Product_variant_Attribute.findAll({
           where: {
             product_variant_id: newVariant.product_variant_id,
+            shop_id,
           },
           include: [
             {
@@ -518,20 +523,26 @@ exports.productService = {
     }
   },
 
-  deleteVariant: async (variant_id) => {
+  deleteVariant: async (variant_id, shop_id) => {
     const transaction = await sequelize.transaction();
 
     try {
-      const product_variant = await Product_Variant.findByPk(variant_id, {
-        transaction,
-      });
+      const product_variant = await Product_Variant.findOne(
+        {
+          where: {
+            product_variant_id: variant_id,
+            shop_id: shop_id,
+          },
+        },
+        { transaction },
+      );
 
       if (!product_variant) {
         throw new Error("Product variant not found");
       }
 
       await Product_variant_Attribute.destroy({
-        where: { product_variant_id: variant_id },
+        where: { product_variant_id: variant_id, shop_id },
         transaction,
       });
 
@@ -543,18 +554,26 @@ exports.productService = {
       throw error;
     }
   },
-  deleteProduct: async (product_id) => {
+  deleteProduct: async (product_id, shop_id) => {
     const transaction = await sequelize.transaction();
 
     try {
-      const product = await Product.findByPk(product_id, { transaction });
+      const product = await Product.findOne(
+        {
+          where: {
+            product_id: product_id,
+            shop_id: shop_id,
+          },
+        },
+        { transaction },
+      );
 
       if (!product) {
         throw new Error("Product not found");
       }
 
       const variants = await Product_Variant.findAll({
-        where: { product_id },
+        where: { product_id, shop_id },
         attributes: ["product_variant_id"],
         transaction,
       });
@@ -570,7 +589,7 @@ exports.productService = {
         });
 
         await Product_Variant.destroy({
-          where: { product_id },
+          where: { product_id, shop_id },
           transaction,
         });
       }

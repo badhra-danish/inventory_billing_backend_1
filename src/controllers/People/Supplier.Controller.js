@@ -15,9 +15,12 @@ exports.createSupplier = async (req, res) => {
 exports.updateSupplier = async (req, res) => {
   try {
     const { supplierID } = req.params;
+    const shop_id = req.user.shop_id;
+
     const updatedSupplier = await supplierService.updateSupplier(
       supplierID,
       req.body,
+      shop_id,
     );
     return success(res, "Supplier Updated Successfully", updatedSupplier);
   } catch (err) {
@@ -27,7 +30,9 @@ exports.updateSupplier = async (req, res) => {
 exports.deleteSupplier = async (req, res) => {
   try {
     const { supplierID } = req.params;
-    await supplierService.deleteSupplier(supplierID);
+    const shop_id = req.user.shop_id;
+
+    await supplierService.deleteSupplier(supplierID, shop_id);
     return success(res, "Supplier Deleted Successfully");
   } catch (err) {
     return error(res, err.message, 400);

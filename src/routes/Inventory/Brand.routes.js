@@ -10,8 +10,8 @@ router.post(
   authorizeRoles("SHOP_ADMIN"),
   BrandController.createBrands,
 );
-router.put("/update/:brandID", BrandController.updateBrand);
-router.delete("/delete/:brandID", BrandController.deleteBrand);
+router.put("/update/:brandID", auth, BrandController.updateBrand);
+router.delete("/delete/:brandID", auth, BrandController.deleteBrand);
 router.get("/getbrandpage", auth, BrandController.getBrandPage);
 
 module.exports = router;

@@ -30,26 +30,6 @@ const Product_Variant = sequelize.define(
       allowNull: false,
       unique: true,
     },
-    discount_type: {
-      type: DataTypes.ENUM("FIXED", "PERCENTAGE", "NONE"),
-      defaultValue: "NONE",
-      allowNull: true,
-    },
-    discount_value: {
-      type: DataTypes.INTEGER,
-      defaultValue: 0,
-      allowNull: true,
-    },
-    tax_type: {
-      type: DataTypes.ENUM("INCLUSIVE", "EXCLUSIVE", "NONE"),
-      defaultValue: "NONE",
-      allowNull: true,
-    },
-    tax_value: {
-      type: DataTypes.INTEGER,
-      defaultValue: 0,
-      allowNull: true,
-    },
     product_id: {
       type: DataTypes.UUID,
       allowNull: false,

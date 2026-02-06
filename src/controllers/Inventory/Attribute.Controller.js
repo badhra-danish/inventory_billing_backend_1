@@ -18,9 +18,11 @@ exports.createAttribute = async (req, res) => {
 exports.updateAttribute = async (req, res) => {
   try {
     const { attributeID } = req.params;
+    const shop_id = req.user.shop_id;
     const updatedAttribute = await attributeService.updateAttribute(
       attributeID,
       req.body,
+      shop_id,
     );
     return success(res, "Attributed Updated Successfully", updatedAttribute);
   } catch (err) {
@@ -31,7 +33,8 @@ exports.updateAttribute = async (req, res) => {
 exports.deleteAttribute = async (req, res) => {
   try {
     const { attributeID } = req.params;
-    await attributeService.deleteAttribute(attributeID);
+    const shop_id = req.user.shop_id;
+    await attributeService.deleteAttribute(attributeID, shop_id);
     return success(res, "Attribute Delete Successfully");
   } catch (err) {
     return error(res, err.message || "Something Went Wrong", 400);

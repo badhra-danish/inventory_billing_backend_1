@@ -10,7 +10,7 @@ const {
   Product_Variant,
   Product,
 } = require("../../models/indexModel");
-const { or } = require("sequelize");
+const { or, where } = require("sequelize");
 
 exports.salesService = {
   createSale: async (salesData, shop_id) => {
@@ -67,7 +67,7 @@ exports.salesService = {
           grand_total: grand_total,
           paid_amount: 0,
           due_amount: grand_total,
-          shop: shop_id,
+          shop_id: shop_id,
           payment_status: "UNPAID",
         },
         { transaction },
@@ -81,7 +81,7 @@ exports.salesService = {
         tax: s.tax || 0,
         tax_amount: s.tax_amount || 0,
         total: s.total,
-        shop: shop_id,
+        shop_id: shop_id,
       }));
 
       await SaleItem.bulkCreate(salesItemsToCreate, { transaction });
@@ -90,7 +90,7 @@ exports.salesService = {
 
       for (const item of salesItems) {
         const stock = await Stock.findOne({
-          where: { product_variant_id: item.product_variant_id },
+          where: { product_variant_id: item.product_variant_id, shop_id },
           transaction,
           lock: transaction.LOCK.UPDATE,
         });
@@ -108,6 +108,7 @@ exports.salesService = {
         await stock.update(
           {
             quantity: stock.quantity - item.quantity,
+            where: { shop_id },
           },
           { transaction },
         );
@@ -119,7 +120,7 @@ exports.salesService = {
       throw error;
     }
   },
-  createPaymentOfSale: async (sale_id, paymentData) => {
+  createPaymentOfSale: async (sale_id, paymentData, shop_id) => {
     const transaction = await sequelize.transaction();
     try {
       const { amount, payment_method, payment_date, note } = paymentData;
@@ -128,7 +129,11 @@ exports.salesService = {
         throw new Error("Invalid payment amount");
       }
 
-      const sale = await Sale.findByPk(sale_id, {
+      const sale = await Sale.findOne({
+        where: {
+          sale_id: sale_id,
+          shop_id,
+        },
         transaction,
         lock: true,
       });
@@ -159,7 +164,7 @@ exports.salesService = {
           payment_date,
           reference_no: sale.invoice_no,
           note,
-          shop: req.shop_id,
+          shop_id: shop_id,
         },
         { transaction },
       );
@@ -182,7 +187,7 @@ exports.salesService = {
       throw error;
     }
   },
-  updateSale: async (sale_id, updatedData) => {
+  updateSale: async (sale_id, updatedData, shop_id) => {
     const transaction = await sequelize.transaction();
     try {
       const {
@@ -243,11 +248,11 @@ exports.salesService = {
           due_amount: grand_total - sale.paid_amount,
           payment_status: payment_status,
         },
-        { where: { sale_id }, transaction },
+        { where: { sale_id, shop_id }, transaction },
       );
 
       const existingItems = await SaleItem.findAll({
-        where: { sale_id },
+        where: { sale_id, shop_id },
         transaction,
       });
 
@@ -267,7 +272,7 @@ exports.salesService = {
           await Stock.increment(
             { quantity: qtyDiff },
             {
-              where: { product_variant_id: item.product_variant_id },
+              where: { product_variant_id: item.product_variant_id, shop_id },
               transaction,
             },
           );
@@ -282,7 +287,10 @@ exports.salesService = {
               tax_amount: item.tax_amount,
               total: item.total,
             },
-            { where: { sales_item_id: item.sales_item_id }, transaction },
+            {
+              where: { sales_item_id: item.sales_item_id, shop_id },
+              transaction,
+            },
           );
 
           incomingIds.push(item.sales_item_id);
@@ -291,7 +299,7 @@ exports.salesService = {
           await Stock.decrement(
             { quantity: item.quantity },
             {
-              where: { product_variant_id: item.product_variant_id },
+              where: { product_variant_id: item.product_variant_id, shop_id },
               transaction,
             },
           );
@@ -305,7 +313,9 @@ exports.salesService = {
               discount: item.discount,
               tax: item.tax,
               total: item.total,
+              shop_id: shop_id,
             },
+
             { transaction },
           );
 
@@ -322,13 +332,13 @@ exports.salesService = {
         await Stock.increment(
           { quantity: item.quantity },
           {
-            where: { product_variant_id: item.product_variant_id },
+            where: { product_variant_id: item.product_variant_id, shop_id },
             transaction,
           },
         );
 
         await SaleItem.destroy({
-          where: { sales_item_id: item.sales_item_id },
+          where: { sales_item_id: item.sales_item_id, shop_id },
           transaction,
         });
       }
@@ -341,7 +351,7 @@ exports.salesService = {
     }
   },
 
-  updatePaymentOfSale: async (payment_id, paymentData) => {
+  updatePaymentOfSale: async (payment_id, paymentData, shop_id) => {
     const transaction = await sequelize.transaction();
     try {
       const { amount, payment_method, payment_date, note } = paymentData;
@@ -350,13 +360,23 @@ exports.salesService = {
         throw new Error("Invalid payment amount");
       }
 
-      const payment = await Payment.findByPk(payment_id, { transaction });
+      const payment = await Payment.findOne({
+        where: {
+          payment_id: payment_id,
+          shop_id,
+        },
+        transaction,
+      });
 
       if (!payment) {
         throw new Error("Payment not found");
       }
 
-      const sale = await Sale.findByPk(payment.sale_id, {
+      const sale = await Sale.findOne({
+        where: {
+          sale_id: payment.sale_id,
+          shop_id,
+        },
         transaction,
         lock: true,
       });
@@ -410,16 +430,25 @@ exports.salesService = {
       throw error;
     }
   },
-  deletePaymentOfSale: async (payment_id) => {
+  deletePaymentOfSale: async (payment_id, shop_id) => {
     const transaction = await sequelize.transaction();
     try {
-      const payment = await Payment.findByPk(payment_id, { transaction });
-
+      const payment = await Payment.findOne({
+        where: {
+          payment_id: payment_id,
+          shop_id,
+        },
+        transaction,
+      });
       if (!payment) {
         throw new Error("Payment not found");
       }
 
-      const sale = await Sale.findByPk(payment.sale_id, {
+      const sale = await Sale.findOne({
+        where: {
+          sale_id: payment.sale_id,
+          shop_id,
+        },
         transaction,
         lock: true,
       });
@@ -464,7 +493,7 @@ exports.salesService = {
     }
   },
 
-  getAllPaymentBySale: async (sale_id) => {
+  getAllPaymentBySale: async (sale_id, shop_id) => {
     try {
       if (!sale_id) {
         throw new Error("Sale id is required");
@@ -473,6 +502,7 @@ exports.salesService = {
       const payments = await Payment.findAll({
         where: {
           sale_id: sale_id,
+          shop_id,
         },
         order: [["createdAt", "DESC"]],
       });
@@ -653,10 +683,10 @@ exports.salesService = {
       throw error;
     }
   },
-  getSaleById: async (sale_id) => {
+  getSaleById: async (sale_id, shop_id) => {
     try {
       const sale = await Sale.findOne({
-        where: { sale_id },
+        where: { sale_id, shop_id },
 
         attributes: [
           "sale_id",

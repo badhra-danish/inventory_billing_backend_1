@@ -13,7 +13,7 @@ const Warranty = require("./Inventory/WarrantyModel");
 ////----------People Table Models--------///
 const Customer = require("./People/CustomerModel");
 const Supplier = require("./People/SupplierModel");
-
+const Warehouse = require("./People/WareHouse");
 //----------Product Table Models--------///
 
 const Product = require("./Inventory/ProductModel/ProductModel");
@@ -161,4 +161,5 @@ module.exports = {
   Sale,
   SaleItem,
   Payment,
+  Warehouse,
 };

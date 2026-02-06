@@ -10,8 +10,8 @@ router.post(
   authorizeRoles("SHOP_ADMIN"),
   SupplierController.createSupplier,
 );
-router.put("/update/:supplierID", SupplierController.updateSupplier);
-router.delete("/delete/:supplierID", SupplierController.deleteSupplier);
+router.put("/update/:supplierID", auth, SupplierController.updateSupplier);
+router.delete("/delete/:supplierID", auth, SupplierController.deleteSupplier);
 router.get("/getsupplierpage", auth, SupplierController.getSupplierPage);
 
 module.exports = router;

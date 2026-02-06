@@ -21,10 +21,15 @@ exports.unitService = {
       throw error;
     }
   },
-  updateUnit: async (unitID, updateData) => {
+  updateUnit: async (unitID, updateData, shop_id) => {
     try {
       const { unitName, unitShortName, status } = updateData;
-      const unit = await Unit.findByPk(unitID);
+      const unit = await Unit.findOne({
+        where: {
+          unit_id: unitID,
+          shop_id: shop_id,
+        },
+      });
       if (!unit) throw new Error("Unit Not Found");
       const updatedunit = await unit.update({
         unitName: unitName ?? unit.unitName,
@@ -36,9 +41,14 @@ exports.unitService = {
       throw error;
     }
   },
-  deleteUnit: async (unitID) => {
+  deleteUnit: async (unitID, shop_id) => {
     try {
-      const unit = await Unit.findByPk(unitID);
+      const unit = await Unit.findOne({
+        where: {
+          unit_id: unitID,
+          shop_id: shop_id,
+        },
+      });
       if (!unit) throw new Error("unit Not Found");
       await unit.destroy();
       return;

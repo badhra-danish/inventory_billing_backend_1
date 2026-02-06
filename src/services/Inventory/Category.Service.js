@@ -5,9 +5,8 @@ exports.categoryService = {
   createCategory: async (data, shop_id) => {
     try {
       const { name, slug, status } = data;
-      console.log(name);
 
-      const exists = await Category.findOne({ where: { name } });
+      const exists = await Category.findOne({ where: { name, shop_id } });
       if (exists) throw new Error("Category_Exits");
 
       return await Category.create({
@@ -20,9 +19,15 @@ exports.categoryService = {
       throw error;
     }
   },
-  updateCategory: async (id, updatedData) => {
+
+  updateCategory: async (id, updatedData, shop_id) => {
     try {
-      const category = await Category.findByPk(id);
+      const category = await Category.findOne({
+        where: {
+          category_id: id,
+          shop_id: shop_id,
+        },
+      });
       if (!category) throw new Error("Category Not Found");
       await category.update(updatedData);
       return category;
@@ -30,9 +35,15 @@ exports.categoryService = {
       throw error;
     }
   },
-  deleteCategory: async (id) => {
+
+  deleteCategory: async (id, shop_id) => {
     try {
-      const category = await Category.findByPk(id);
+      const category = await Category.findOne({
+        where: {
+          category_id: id,
+          shop_id: shop_id,
+        },
+      });
       if (!category) throw new Error("Category Not Found");
       await category.destroy();
       return;

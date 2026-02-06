@@ -10,8 +10,12 @@ router.post(
   authorizeRoles("SHOP_ADMIN"),
   AttributeController.createAttribute,
 );
-router.put("/update/:attributeID", AttributeController.updateAttribute);
-router.delete("/delete/:attributeID", AttributeController.deleteAttribute);
+router.put("/update/:attributeID", auth, AttributeController.updateAttribute);
+router.delete(
+  "/delete/:attributeID",
+  auth,
+  AttributeController.deleteAttribute,
+);
 router.get("/getattributepage", auth, AttributeController.getAttributePage);
 
 module.exports = router;

@@ -17,7 +17,8 @@ exports.createUnit = async (req, res) => {
 exports.updateUnit = async (req, res) => {
   try {
     const { unitID } = req.params;
-    const updatedUnit = await unitService.updateUnit(unitID, req.body);
+    const shop_id = req.user.shop_id;
+    const updatedUnit = await unitService.updateUnit(unitID, req.body, shop_id);
     return success(res, "Unit Updated Successfully", updatedUnit);
   } catch (err) {
     return error(res, err.message || "something Went wrong", 400);
@@ -27,7 +28,8 @@ exports.updateUnit = async (req, res) => {
 exports.deleteUnit = async (req, res) => {
   try {
     const { unitID } = req.params;
-    await unitService.deleteUnit(unitID);
+    const shop_id = req.user.shop_id;
+    await unitService.deleteUnit(unitID, shop_id);
     return success(res, "Unit Delete Successfully");
   } catch (err) {
     return error(res, err.message || "something Went wrong", 400);

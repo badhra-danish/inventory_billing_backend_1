@@ -7,7 +7,7 @@ exports.brandService = {
       if (!brandName || !status) {
         throw new Error("All Feild Are Required");
       }
-      const exists = await Brand.findOne({ where: { brandName } });
+      const exists = await Brand.findOne({ where: { brandName, shop_id } });
       if (exists) throw new Error("Brand_Exits");
 
       const brand = await Brand.create({
@@ -21,10 +21,15 @@ exports.brandService = {
       throw error;
     }
   },
-  updateBrand: async (brandID, updateData) => {
+  updateBrand: async (brandID, updateData, shop_id) => {
     try {
       const { brandName, status } = updateData;
-      const brand = await Brand.findByPk(brandID);
+      const brand = await Brand.findOne({
+        where: {
+          brand_id: brandID,
+          shop_id: shop_id,
+        },
+      });
       if (!brand) throw new Error("Brand Not Found");
       const updatedBrand = await brand.update({
         brandName: brandName ?? brand.brandName,
@@ -35,9 +40,14 @@ exports.brandService = {
       throw error;
     }
   },
-  deleteBrand: async (brandID) => {
+  deleteBrand: async (brandID, shop_id) => {
     try {
-      const brand = await Brand.findByPk(brandID);
+      const brand = await Brand.findOne({
+        where: {
+          brand_id: brandID,
+          shop_id: shop_id,
+        },
+      });
       if (!brand) throw new Error("Brand Not Found");
       await brand.destroy();
       return;

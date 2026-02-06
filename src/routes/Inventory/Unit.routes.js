@@ -10,8 +10,8 @@ router.post(
   authorizeRoles("SHOP_ADMIN"),
   UnitController.createUnit,
 );
-router.put("/update/:unitID", UnitController.updateUnit);
-router.delete("/delete/:unitID", UnitController.deleteUnit);
+router.put("/update/:unitID", auth, UnitController.updateUnit);
+router.delete("/delete/:unitID", auth, UnitController.deleteUnit);
 router.get("/getunitpage", auth, UnitController.getUnitPage);
 
 module.exports = router;

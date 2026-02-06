@@ -18,6 +18,7 @@ router.post(
 );
 router.post(
   "/addproductvariant/:product_id",
+  auth,
   ProductController.createVariantofProduct,
 );
 router.get("/getproductpage", auth, ProductController.getProductPage);
@@ -27,12 +28,28 @@ router.get(
   auth,
   ProductController.getAllVariantByProduct,
 );
-router.get("/getvariantbysearch", ProductController.getAllVariantBySearch);
+router.get(
+  "/getvariantbysearch",
+  auth,
+  ProductController.getAllVariantBySearch,
+);
 
-router.put("/upadatevariant/:variant_id", ProductController.updateVariant);
-router.put("/updateproduct/:product_id", ProductController.updateProduct);
+router.put(
+  "/upadatevariant/:variant_id",
+  auth,
+  ProductController.updateVariant,
+);
+router.put("/updateproduct/:product_id", auth, ProductController.updateProduct);
 
-router.delete("/deletevariant/:variant_id", ProductController.deleteVariant);
-router.delete("/deleteproduct/:product_id", ProductController.deleteProduct);
+router.delete(
+  "/deletevariant/:variant_id",
+  auth,
+  ProductController.deleteVariant,
+);
+router.delete(
+  "/deleteproduct/:product_id",
+  auth,
+  ProductController.deleteProduct,
+);
 
 module.exports = router;

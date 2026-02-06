@@ -10,9 +10,13 @@ router.post(
   authorizeRoles("SHOP_ADMIN"),
   StockController.createStock,
 );
-router.put("/updatequantity/:stock_id", StockController.updateStockQuantity);
+router.put(
+  "/updatequantity/:stock_id",
+  auth,
+  StockController.updateStockQuantity,
+);
 router.get("/getallstockpage", auth, StockController.getAllStockPage);
 router.get("/getvariantinstock", auth, StockController.getAllVariantInStock);
-router.delete("/delete/:stock_id", StockController.deleteStockVariant);
+router.delete("/delete/:stock_id", auth, StockController.deleteStockVariant);
 
 module.exports = router;

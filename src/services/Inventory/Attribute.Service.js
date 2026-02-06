@@ -48,13 +48,18 @@ exports.attributeService = {
       throw error;
     }
   },
-  updateAttribute: async (attributeID, updatedData) => {
+  updateAttribute: async (attributeID, updatedData, shop_id) => {
     const transaction = await sequelize.transaction();
 
     try {
       const { attributeName, status, attributeValues } = updatedData;
 
-      const attribute = await Attribute.findByPk(attributeID);
+      const attribute = await Attribute.findOne({
+        where: {
+          attribute_id: attributeID,
+          shop_id: shop_id,
+        },
+      });
       if (!attribute) throw new Error("Attribute Not Found");
 
       await attribute.update(
@@ -69,7 +74,7 @@ exports.attributeService = {
         for (const val of attributeValues) {
           if (val.delete == true && val.attribute_value_id) {
             await AttributeValues.destroy({
-              where: { attribute_value_id: val.attribute_value_id },
+              where: { attribute_value_id: val.attribute_value_id, shop_id },
               transaction,
             });
             continue;
@@ -79,7 +84,7 @@ exports.attributeService = {
             await AttributeValues.update(
               { value: val.value },
               {
-                where: { attribute_value_id: val.attribute_value_id },
+                where: { attribute_value_id: val.attribute_value_id, shop_id },
                 transaction,
               },
             );
@@ -90,6 +95,7 @@ exports.attributeService = {
             {
               value: val.value,
               attribute_id: attributeID,
+              shop_id: shop_id,
             },
             { transaction },
           );
@@ -116,15 +122,23 @@ exports.attributeService = {
       throw error;
     }
   },
-  deleteAttribute: async (attributeID) => {
+  deleteAttribute: async (attributeID, shop_id) => {
     const transaction = await sequelize.transaction();
     try {
-      const attribute = await Attribute.findByPk(attributeID, { transaction });
+      const attribute = await Attribute.findOne(
+        {
+          where: {
+            attribute_id: attributeID,
+            shop_id: shop_id,
+          },
+        },
+        { transaction },
+      );
       if (!attribute) throw new Error("Attribute not Found");
       //console.log(attribute);
 
       await AttributeValues.destroy({
-        where: { attribute_id: attributeID },
+        where: { attribute_id: attributeID, shop_id },
         transaction,
       });
 

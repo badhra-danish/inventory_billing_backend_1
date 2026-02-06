@@ -13,6 +13,7 @@ router.post(
 router.put("/update/:subCategoryID", SubCategoryController.updateSubcategory);
 router.delete(
   "/delete/:subCategoryID",
+  auth,
   SubCategoryController.deleteSubCategory,
 );
 router.get(

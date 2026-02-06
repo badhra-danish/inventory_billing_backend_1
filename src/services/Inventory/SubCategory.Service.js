@@ -24,11 +24,16 @@ exports.SubCategoryService = {
     });
     return subcategory;
   },
-  updateSubCategory: async (SubCategoryID, updateSubCategoryData) => {
+  updateSubCategory: async (SubCategoryID, updateSubCategoryData, shop_id) => {
     try {
       const { categoryID, subCategoryName, categoryCode, description, status } =
         updateSubCategoryData;
-      const subCategory = await SubCategory.findByPk(SubCategoryID);
+      const subCategory = await SubCategory.findOne({
+        where: {
+          subCategory_id: SubCategoryID,
+          shop_id: shop_id,
+        },
+      });
       if (!subCategory) throw new Error("SubCategory Not Found");
       if (categoryID) {
         const category = await Category.findByPk(categoryID);
@@ -47,9 +52,14 @@ exports.SubCategoryService = {
       throw error;
     }
   },
-  deletesubCategory: async (SubCategoryID) => {
+  deletesubCategory: async (SubCategoryID, shop_id) => {
     try {
-      const subCategory = await SubCategory.findByPk(SubCategoryID);
+      const subCategory = await SubCategory.findOne({
+        where: {
+          subCategory_id: SubCategoryID,
+          shop_id: shop_id,
+        },
+      });
       if (!subCategory) throw new Error("SubCategory Not Found");
       await subCategory.destroy();
       return;
@@ -63,9 +73,9 @@ exports.SubCategoryService = {
         where: { category_id: categoryID, shop_id },
       });
 
-      // if (subCategories.length === 0) {
-      //   throw new Error("SubCategory Not Found");
-      // }
+      if (subCategories.length === 0) {
+        throw new Error("SubCategory Not Found");
+      }
 
       return subCategories;
     } catch (error) {

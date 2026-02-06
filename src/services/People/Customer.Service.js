@@ -25,7 +25,7 @@ exports.customerService = {
         email: email,
         phone: phone,
         address: address,
-        shop: shop_id,
+        shop_id: shop_id,
         location: {
           city: location.city,
           state: location.state,
@@ -41,13 +41,18 @@ exports.customerService = {
       throw error;
     }
   },
-  updateCustomer: async (customerID, updateData) => {
+  updateCustomer: async (customerID, updateData, shop_id) => {
     try {
       const { firstName, lastName, email, phone, address, location, status } =
         updateData;
       console.log("update", updateData);
 
-      const customer = await Customer.findByPk(customerID);
+      const customer = await Customer.findOne({
+        where: {
+          customer_id: customerID,
+          shop_id,
+        },
+      });
       if (!customer) throw new Error("Customer Not Found");
 
       if (!firstName) throw new Error("First name is required");
@@ -82,9 +87,14 @@ exports.customerService = {
       throw error;
     }
   },
-  deleteCustomer: async (customerID) => {
+  deleteCustomer: async (customerID, shop_id) => {
     try {
-      const customer = await Customer.findByPk(customerID);
+      const customer = await Customer.findOne({
+        where: {
+          customer_id: customerID,
+          shop_id,
+        },
+      });
       if (!customer) throw new Error("Customer Not Found");
 
       await customer.destroy();

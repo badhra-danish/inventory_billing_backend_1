@@ -14,9 +14,11 @@ exports.createStock = async (req, res) => {
 exports.updateStockQuantity = async (req, res) => {
   try {
     const { stock_id } = req.params;
+    const shop_id = req.user.shop_id;
     const updateStock = await stockService.updateStockQuantity(
       stock_id,
       req.body,
+      shop_id,
     );
     return success(res, "Quantity Updated Successfully", updateStock);
   } catch (err) {
@@ -44,7 +46,8 @@ exports.getAllStockPage = async (req, res) => {
 };
 exports.getAllVariantInStock = async (req, res) => {
   try {
-    const variant = await stockService.getVariantInStock(req.query);
+    const shop_id = req.user.shop_id;
+    const variant = await stockService.getVariantInStock(req.query, shop_id);
     return success(res, "Variant Are Fetch", variant);
   } catch (err) {
     return error(res, err.message, 400);
@@ -53,7 +56,8 @@ exports.getAllVariantInStock = async (req, res) => {
 exports.deleteStockVariant = async (req, res) => {
   try {
     const { stock_id } = req.params;
-    await stockService.deleteStockVariant(stock_id);
+    const shop_id = req.user.shop_id;
+    await stockService.deleteStockVariant(stock_id, shop_id);
     return success(res, "Stock Delete Successfully");
   } catch (err) {
     return error(res, err.message, 400);

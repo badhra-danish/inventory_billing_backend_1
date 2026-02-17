@@ -21,7 +21,7 @@ app.use(
     await sequelize.sync();
     console.log(" Models synced");
 
-    app.listen(PORT, async () =>
+    app.listen(PORT, "0.0.0.0", async () =>
       console.log(
         ` Server running on  http://localhost:${PORT}/api
 `,

@@ -9,6 +9,7 @@ exports.createSupplier = async (req, res) => {
     const supplier = await supplierService.createSupplier(req.body, shop_id);
     return success(res, "Supplier created Successfully", supplier);
   } catch (err) {
+    console.error(err);
     return error(res, err.message, 400);
   }
 };
@@ -40,9 +41,8 @@ exports.deleteSupplier = async (req, res) => {
 };
 exports.getSupplierPage = async (req, res) => {
   try {
-    const shop_id = req.user.shop_id;
     const { page, limit, offset } = getPagination(req.query);
-
+    const shop_id = req.user.shop_id;
     const supplierData = await Supplier.findAndCountAll({
       limit,
       offset,
@@ -50,10 +50,22 @@ exports.getSupplierPage = async (req, res) => {
       order: [["createdAt", "DESC"]],
     });
 
+    const formattedRows = supplierData.rows.map((supplier) => {
+      const data = supplier.toJSON();
+
+      return {
+        ...data,
+        city: data.location?.city || null,
+        state: data.location?.state || null,
+        postalCode: data.location?.postalCode || null,
+        location: undefined,
+      };
+    });
+
     return success(
       res,
-      `${limit} Warranty Fetched`,
-      supplierData.rows,
+      `${limit} Supplier fetched`,
+      formattedRows,
       getPageMetaData(page, limit, supplierData.count),
     );
   } catch (err) {

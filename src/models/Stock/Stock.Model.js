@@ -15,6 +15,10 @@ const Stock = sequelize.define(
       allowNull: false,
       feild: "product_variant_id",
     },
+    warehouse_id: {
+      type: DataTypes.UUID,
+      feild: "warehouse_id",
+    },
     quantity: {
       type: DataTypes.INTEGER,
       allowNull: false,

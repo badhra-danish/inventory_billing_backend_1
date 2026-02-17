@@ -16,6 +16,11 @@ router.put(
   StockController.updateStockQuantity,
 );
 router.get("/getallstockpage", auth, StockController.getAllStockPage);
+router.get(
+  "/getallstockmovementbyid/:stock_id",
+  auth,
+  StockController.getAllStockMovementById,
+);
 router.get("/getvariantinstock", auth, StockController.getAllVariantInStock);
 router.delete("/delete/:stock_id", auth, StockController.deleteStockVariant);
 

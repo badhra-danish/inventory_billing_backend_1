@@ -44,6 +44,27 @@ exports.getAllStockPage = async (req, res) => {
     return error(res, err.message);
   }
 };
+exports.getAllStockMovementById = async (req, res) => {
+  try {
+    const { stock_id } = req.params;
+    const shop_id = req.user.shop_id;
+    const { page, limit, offset } = getPagination(req.query);
+    const moveMent = await stockService.getAllStockMovementByStockId(
+      stock_id,
+      shop_id,
+      limit,
+      offset,
+    );
+    return success(
+      res,
+      `${moveMent.count} StockMovement Fetch Successfully`,
+      moveMent.data,
+      getPageMetaData(page, limit, moveMent.count),
+    );
+  } catch (err) {
+    return error(res, err.message);
+  }
+};
 exports.getAllVariantInStock = async (req, res) => {
   try {
     const shop_id = req.user.shop_id;

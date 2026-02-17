@@ -9,8 +9,8 @@ const {
   Customer,
   Product_Variant,
   Product,
+  StockMovement,
 } = require("../../models/indexModel");
-const { or, where } = require("sequelize");
 
 exports.salesService = {
   createSale: async (salesData, shop_id) => {
@@ -94,21 +94,39 @@ exports.salesService = {
           transaction,
           lock: transaction.LOCK.UPDATE,
         });
+
         if (!stock) {
           throw new Error(
             `Stock not found for variant ${item.product_variant_id}`,
           );
         }
+
         if (stock.quantity < item.quantity) {
           throw new Error(
             `Insufficient stock for variant ${item.product_variant_id}`,
           );
         }
 
+        const beforeQty = stock.quantity;
+        const afterQty = beforeQty - item.quantity;
+
         await stock.update(
           {
-            quantity: stock.quantity - item.quantity,
-            where: { shop_id },
+            quantity: afterQty,
+            status: afterQty === 0 ? "OUTSTOCK" : "INSTOCK",
+          },
+          { transaction },
+        );
+
+        await StockMovement.create(
+          {
+            stock_id: stock.stock_id,
+            type: "OUT",
+            reason: "SALE",
+            quantity: item.quantity,
+            before_qty: beforeQty,
+            after_qty: afterQty,
+            shop_id: shop_id,
           },
           { transaction },
         );
@@ -120,6 +138,7 @@ exports.salesService = {
       throw error;
     }
   },
+
   createPaymentOfSale: async (sale_id, paymentData, shop_id) => {
     const transaction = await sequelize.transaction();
     try {
@@ -189,6 +208,7 @@ exports.salesService = {
   },
   updateSale: async (sale_id, updatedData, shop_id) => {
     const transaction = await sequelize.transaction();
+
     try {
       const {
         customer_id,
@@ -207,7 +227,7 @@ exports.salesService = {
           acc.sub_total += itemSubTotal;
           acc.item_tax += item.tax_amount || 0;
           acc.item_discount += item.discount || 0;
-          acc.items_total += item.total; // item final total
+          acc.items_total += item.total;
 
           return acc;
         },
@@ -222,13 +242,16 @@ exports.salesService = {
       const orderTaxPercent = order_tax || 0;
       const orderDiscount = discount || 0;
       const shippingCharge = shipping || 0;
+
       const orderTaxAmount = (summary.items_total * orderTaxPercent) / 100;
+
       const grand_total =
         summary.items_total + orderTaxAmount + shippingCharge - orderDiscount;
 
-      let payment_status = "UNPAID";
       const sale = await Sale.findByPk(sale_id, { transaction });
-      if (Number(sale.paid_amount) === Number(sale.grand_total)) {
+
+      let payment_status = "UNPAID";
+      if (Number(sale.paid_amount) === Number(grand_total)) {
         payment_status = "PAID";
       } else if (Number(sale.paid_amount) > 0) {
         payment_status = "PARTIALLY_PAID";
@@ -244,11 +267,10 @@ exports.salesService = {
           status,
           sub_total: summary.items_total,
           grand_total: grand_total,
-          paid_amount: sale.paid_amount,
           due_amount: grand_total - sale.paid_amount,
-          payment_status: payment_status,
+          payment_status,
         },
-        { where: { sale_id, shop_id }, transaction },
+        { transaction },
       );
 
       const existingItems = await SaleItem.findAll({
@@ -259,26 +281,57 @@ exports.salesService = {
       const existingMap = new Map(
         existingItems.map((item) => [item.sales_item_id, item]),
       );
-      console.log(existingMap);
 
       const incomingIds = [];
 
       for (const item of sales_items) {
+        const stock = await Stock.findOne({
+          where: {
+            product_variant_id: item.product_variant_id,
+            shop_id,
+          },
+          transaction,
+        });
+
+        if (!stock) {
+          throw new Error("Stock not found for variant");
+        }
+
         if (item.sales_item_id && existingMap.has(item.sales_item_id)) {
           const oldItem = existingMap.get(item.sales_item_id);
+
           const qtyDiff = oldItem.quantity - item.quantity;
 
-          // Update stock
-          await Stock.increment(
-            { quantity: qtyDiff },
-            {
-              where: { product_variant_id: item.product_variant_id, shop_id },
-              transaction,
-            },
-          );
+          if (qtyDiff !== 0) {
+            const beforeQty = stock.quantity;
+            const afterQty = beforeQty + qtyDiff;
 
-          // Update sale item
-          await SaleItem.update(
+            if (afterQty < 0) {
+              throw new Error("Insufficient stock");
+            }
+
+            const movementType = qtyDiff > 0 ? "IN" : "OUT";
+
+            await stock.update({ quantity: afterQty }, { transaction });
+
+            await StockMovement.create(
+              {
+                stock_id: stock.stock_id,
+                sale_id: sale_id,
+                type: movementType,
+                reason: "SALE_UPDATE",
+                before_qty: beforeQty,
+                after_qty: afterQty,
+                quantity: Math.abs(qtyDiff), // always positive
+                reference_id: sale_id,
+                note: `Sale quantity updated`,
+                shop_id,
+              },
+              { transaction },
+            );
+          }
+
+          await oldItem.update(
             {
               product_variant_id: item.product_variant_id,
               quantity: item.quantity,
@@ -287,23 +340,11 @@ exports.salesService = {
               tax_amount: item.tax_amount,
               total: item.total,
             },
-            {
-              where: { sales_item_id: item.sales_item_id, shop_id },
-              transaction,
-            },
+            { transaction },
           );
 
           incomingIds.push(item.sales_item_id);
         } else {
-          // Reduce stock
-          await Stock.decrement(
-            { quantity: item.quantity },
-            {
-              where: { product_variant_id: item.product_variant_id, shop_id },
-              transaction,
-            },
-          );
-
           const newItem = await SaleItem.create(
             {
               sale_id,
@@ -313,12 +354,34 @@ exports.salesService = {
               discount: item.discount,
               tax: item.tax,
               total: item.total,
-              shop_id: shop_id,
+              shop_id,
             },
-
             { transaction },
           );
+          const beforeQty = stock.quantity;
+          const afterQty = beforeQty - item.quantity;
 
+          if (afterQty < 0) {
+            throw new Error("Insufficient stock");
+          }
+
+          await stock.update({ quantity: afterQty }, { transaction });
+
+          await StockMovement.create(
+            {
+              stock_id: stock.stock_id,
+              sale_id: sale_id,
+              type: "OUT",
+              reason: "SALE",
+              before_qty: beforeQty,
+              after_qty: afterQty,
+              quantity: item.quantity,
+              reference_id: sale_id,
+              note: `New sale item added`,
+              shop_id,
+            },
+            { transaction },
+          );
           incomingIds.push(newItem.sales_item_id);
         }
       }
@@ -328,19 +391,36 @@ exports.salesService = {
       );
 
       for (const item of itemsToDelete) {
-        // Restore stock
-        await Stock.increment(
-          { quantity: item.quantity },
-          {
-            where: { product_variant_id: item.product_variant_id, shop_id },
-            transaction,
+        const stock = await Stock.findOne({
+          where: {
+            product_variant_id: item.product_variant_id,
+            shop_id,
           },
-        );
-
-        await SaleItem.destroy({
-          where: { sales_item_id: item.sales_item_id, shop_id },
           transaction,
         });
+
+        const beforeQty = stock.quantity;
+        const afterQty = beforeQty + item.quantity;
+
+        await stock.update({ quantity: afterQty }, { transaction });
+        await stock.reload({ transaction });
+        await StockMovement.create(
+          {
+            stock_id: stock.stock_id,
+            sale_id: sale_id,
+            type: "IN",
+            reason: "SALE_DELETE",
+            before_qty: beforeQty,
+            after_qty: afterQty,
+            quantity: item.quantity,
+            reference_id: sale_id,
+            note: `Sale item removed`,
+            shop_id,
+          },
+          { transaction },
+        );
+
+        await item.destroy({ transaction });
       }
 
       await transaction.commit();

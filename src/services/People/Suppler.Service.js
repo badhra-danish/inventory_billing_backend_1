@@ -36,12 +36,11 @@ exports.supplierService = {
       });
       return supplier;
     } catch (error) {
-      console.log(error);
-
+      console.error(error);
       throw error;
     }
   },
-  updateSupplier: async (supplierID, updateData) => {
+  updateSupplier: async (supplierID, updateData, shop_id) => {
     try {
       const { firstName, lastName, email, phone, address, location, status } =
         updateData;
@@ -89,7 +88,7 @@ exports.supplierService = {
       throw error;
     }
   },
-  deleteSupplier: async (supplierID) => {
+  deleteSupplier: async (supplierID, shop_id) => {
     try {
       const supplier = await Supplier.findOne({
         where: {

@@ -6,6 +6,7 @@ const {
   Product_Variant,
   Supplier,
   Warehouse,
+  Product,
 } = require("../../models/indexModel");
 const { generatePONumber } = require("../../utils/GeneratePoNo");
 
@@ -176,7 +177,13 @@ exports.purchaseOrderService = {
           {
             model: Supplier,
             as: "supplier",
-            attributes: ["supplierID", "firstName", "lastName", "email"],
+            attributes: [
+              "supplierID",
+              "firstName",
+              "lastName",
+              "email",
+              "phone",
+            ],
           },
           {
             model: Warehouse,
@@ -190,7 +197,19 @@ exports.purchaseOrderService = {
               {
                 model: Product_Variant,
                 as: "variant",
-                attributes: ["product_variant_id", "skuCode", "price"],
+                attributes: [
+                  "product_variant_id",
+                  "skuCode",
+                  "price",
+                  "variant_label",
+                ],
+                include: [
+                  {
+                    model: Product,
+                    as: "product",
+                    attributes: ["productName"],
+                  },
+                ],
               },
             ],
           },

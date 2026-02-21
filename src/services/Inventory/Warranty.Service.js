@@ -65,7 +65,7 @@ exports.warrantyService = {
       throw error;
     }
   },
-  deleteWarranty: async (warrantyID) => {
+  deleteWarranty: async (warrantyID, shop_id) => {
     try {
       const warranty = await Warranty.findOne({
         where: {

@@ -16,6 +16,10 @@ exports.auth = (req, res, next) => {
 
     next();
   } catch (err) {
-    res.status(401).json({ message: "Invalid token" });
+    if (err.name === "TokenExpiredError") {
+      return res.status(401).json({ message: "Token expired" });
+    }
+
+    return res.status(401).json({ message: "Invalid token" });
   }
 };

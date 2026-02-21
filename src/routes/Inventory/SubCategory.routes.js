@@ -10,7 +10,7 @@ router.post(
   authorizeRoles("SHOP_ADMIN"),
   SubCategoryController.createSubcategory,
 );
-router.put("/update/:subCategoryID", SubCategoryController.updateSubcategory);
+router.put("/update/:subCategoryID",auth, SubCategoryController.updateSubcategory);
 router.delete(
   "/delete/:subCategoryID",
   auth,

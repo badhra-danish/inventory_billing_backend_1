@@ -26,29 +26,34 @@ exports.SubCategoryService = {
   },
   updateSubCategory: async (SubCategoryID, updateSubCategoryData, shop_id) => {
     try {
-      const { categoryID, subCategoryName, categoryCode, description, status } =
-        updateSubCategoryData;
+      const { category_id, subCategoryName, categoryCode, description, status } =
+          updateSubCategoryData;
+
       const subCategory = await SubCategory.findOne({
         where: {
           subCategory_id: SubCategoryID,
           shop_id: shop_id,
         },
       });
-      if (!subCategory) throw new Error("SubCategory Not Found");
-      if (categoryID) {
-        const category = await Category.findByPk(categoryID);
+
+      if (!subCategory) {
+        throw new Error("SubCategory Not Found");
+      }
+
+      if (category_id) {
+        const category = await Category.findByPk(category_id);
         if (!category) throw new Error("Category Not Found");
       }
 
-      const updatedSubcategory = await subCategory.update({
-        category_id: categoryID ?? subCategory.categoryID,
+      return await subCategory.update({
+        category_id: category_id ?? subCategory.category_id,
         subCategoryName: subCategoryName ?? subCategory.subCategoryName,
         categoryCode: categoryCode ?? subCategory.categoryCode,
         description: description ?? subCategory.description,
         status: status ?? subCategory.status,
       });
-      return updatedSubcategory;
     } catch (error) {
+      console.log(error)
       throw error;
     }
   },

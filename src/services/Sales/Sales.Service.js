@@ -1,4 +1,3 @@
-const { da } = require("zod/locales");
 const sequelize = require("../../config/database");
 const Sale = require("../../models/Sales/Sales.Model");
 const { generateInvoiceNo } = require("../../utils/GenereteInvoiceNo");

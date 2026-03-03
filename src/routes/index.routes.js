@@ -17,7 +17,8 @@ const warehouseRoutes = require("./People/warehouse.route");
 // Sales
 const salesRoutes = require("./Sales/sale.Route");
 
-const PurchaseOrderRoutes = require("./Purchase/Purchase.routes");
+const PurchaseOrderRoutes = require("./Purchase/PurchaseOrder.routes");
+const PurchaseRoutes = require("./Purchase/Purchase.Route");
 router.use("/auth", userRoutes);
 router.use("/category", categoryRoutes);
 router.use("/subcategory", subcategoryRoutes);
@@ -35,6 +36,7 @@ router.use("/stock", stockRoutes);
 router.use("/sale", salesRoutes);
 
 router.use("/purchaseorder", PurchaseOrderRoutes);
+router.use("/purchase", PurchaseRoutes);
 
 router.use("/warehouse", warehouseRoutes);
 module.exports = router;

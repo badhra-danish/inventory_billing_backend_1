@@ -15,4 +15,19 @@ router.get(
   auth,
   PurchaseController.getAllPurchaseOrder,
 );
+router.get(
+  "/getpurchaseorderid/:purchase_order_id",
+  auth,
+  PurchaseController.getPurchaseOrder,
+);
+router.put(
+  "/updatepurchaseorder/:purcahse_order_id",
+  auth,
+  PurchaseController.updatePurchaseOrder,
+);
+router.get(
+  "/getallpurchaseorderno",
+  auth,
+  PurchaseController.getAllPurchaseOrderNo,
+);
 module.exports = router;

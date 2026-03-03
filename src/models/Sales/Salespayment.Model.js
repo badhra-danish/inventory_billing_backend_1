@@ -1,8 +1,8 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../../config/database");
 
-const Payment = sequelize.define(
-  "Payment",
+const SalesPayment = sequelize.define(
+  "SalesPayment",
   {
     payment_id: {
       type: DataTypes.UUID,
@@ -40,8 +40,8 @@ const Payment = sequelize.define(
     },
   },
   {
-    tableName: "payments",
+    tableName: "Salespayments",
     timestamps: true,
   },
 );
-module.exports = Payment;
+module.exports = SalesPayment;

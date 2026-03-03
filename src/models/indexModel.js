@@ -28,13 +28,16 @@ const Stock = require("./Stock/Stock.Model");
 
 const Sale = require("./Sales/Sales.Model");
 const SaleItem = require("./Sales/Sales_item.Model");
-const Payment = require("./Sales/payment.Model");
+const SalesPayment = require("./Sales/Salespayment.Model");
 const User = require("./Users/User.Model");
 const StockMovement = require("./Stock/StockMovement.Model");
 
 //----------Purchase Table Models--------///
 const PurchaseOrder = require("./Purchase/PurchaseOrder.model");
 const PurchaseOrderItem = require("./Purchase/PurchaseOrder_item.model");
+const Purchase = require("./Purchase/PurchaseModel");
+const PurchaseItems = require("./Purchase/Purchase_item_model");
+const PurchasePayment = require("./Purchase/PurchasePayment.Model");
 
 /// ---------  relationship or the Assosiation of the models Users .. --------////
 Shop.hasMany(User, { foreignKey: "shop_id", as: "users" });
@@ -157,12 +160,12 @@ SaleItem.belongsTo(Sale, {
   as: "sale",
 });
 
-Sale.hasMany(Payment, {
+Sale.hasMany(SalesPayment, {
   foreignKey: "sale_id",
-  as: "payments",
+  as: "salepayments",
 });
 
-Payment.belongsTo(Sale, {
+SalesPayment.belongsTo(Sale, {
   foreignKey: "sale_id",
   as: "sale",
 });
@@ -180,6 +183,49 @@ SaleItem.belongsTo(Product_Variant, {
   foreignKey: "product_variant_id",
   as: "variant",
 });
+
+// Purchase Realtionship
+
+Purchase.hasMany(SaleItem, {
+  foreignKey: "purchase_id",
+  as: "purchase_items",
+});
+PurchaseItems.belongsTo(Purchase, {
+  foreignKey: "purchase_id",
+  as: "purchase",
+});
+PurchaseItems.belongsTo(Product_Variant, {
+  foreignKey: "product_variant_id",
+  as: "variant",
+});
+Purchase.hasMany(PurchasePayment, {
+  foreignKey: "purchase_id",
+  as: "purchasepayments",
+});
+
+PurchasePayment.belongsTo(Purchase, {
+  foreignKey: "purchase_id",
+  as: "purchase",
+});
+
+Supplier.hasMany(Purchase, {
+  foreignKey: "supplier_id",
+  as: "purchases",
+});
+Purchase.belongsTo(Supplier, {
+  foreignKey: "supplier_id",
+  as: "supplier",
+});
+Warehouse.hasMany(PurchaseItems, {
+  foreignKey: "warehouse_id",
+  as: "purchase_items",
+});
+PurchaseItems.belongsTo(Warehouse, {
+  foreignKey: "warehouse_id",
+  as: "warehouse",
+});
+
+// Purchase Order Relationships
 
 PurchaseOrder.hasMany(PurchaseOrderItem, {
   foreignKey: "purchase_order_id",
@@ -231,7 +277,7 @@ module.exports = {
   Stock,
   Sale,
   SaleItem,
-  Payment,
+  SalesPayment,
   Warehouse,
   StockMovement,
   PurchaseOrder,

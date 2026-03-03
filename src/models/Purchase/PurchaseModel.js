@@ -21,7 +21,10 @@ const Purchase = sequelize.define(
       type: DataTypes.UUID,
       allowNull: false,
     },
-
+    warehouse_id: {
+      type: DataTypes.UUID,
+      allowNull: false,
+    },
     purchase_date: {
       type: DataTypes.DATEONLY,
       allowNull: false,
@@ -48,7 +51,7 @@ const Purchase = sequelize.define(
     status: {
       type: DataTypes.ENUM("PENDING", "RECEIVED", "ORDERED"),
       allowNull: false,
-      defaultValue: "INPROGRESS",
+      defaultValue: "PENDING",
     },
 
     sub_total: {

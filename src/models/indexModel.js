@@ -186,7 +186,7 @@ SaleItem.belongsTo(Product_Variant, {
 
 // Purchase Realtionship
 
-Purchase.hasMany(SaleItem, {
+Purchase.hasMany(PurchaseItems, {
   foreignKey: "purchase_id",
   as: "purchase_items",
 });

@@ -9,6 +9,7 @@ const {
   Product_Variant,
   Product,
   StockMovement,
+  SalesPayment,
 } = require("../../models/indexModel");
 
 exports.salesService = {
@@ -76,6 +77,7 @@ exports.salesService = {
         sale_id: sale.sale_id,
         product_variant_id: s.product_variant_id,
         quantity: s.quantity,
+        warehouse_id: s.warehouse_id,
         discount: s.discount || 0,
         tax: s.tax || 0,
         tax_amount: s.tax_amount || 0,
@@ -89,7 +91,11 @@ exports.salesService = {
 
       for (const item of salesItems) {
         const stock = await Stock.findOne({
-          where: { product_variant_id: item.product_variant_id, shop_id },
+          where: {
+            product_variant_id: item.product_variant_id,
+            warehouse_id: item.warehouse_id,
+            shop_id,
+          },
           transaction,
           lock: transaction.LOCK.UPDATE,
         });
@@ -174,7 +180,7 @@ exports.salesService = {
         payment_status = "PARTIALLY_PAID";
       }
 
-      const payment = await Payment.create(
+      const payment = await SalesPayment.create(
         {
           sale_id,
           amount,
@@ -219,23 +225,18 @@ exports.salesService = {
         sales_items,
       } = updatedData;
 
+      /* ================= CALCULATE TOTAL ================= */
+
       const summary = sales_items.reduce(
         (acc, item) => {
           const itemSubTotal = item.price * item.quantity;
-
           acc.sub_total += itemSubTotal;
           acc.item_tax += item.tax_amount || 0;
           acc.item_discount += item.discount || 0;
           acc.items_total += item.total;
-
           return acc;
         },
-        {
-          sub_total: 0,
-          item_tax: 0,
-          item_discount: 0,
-          items_total: 0,
-        },
+        { sub_total: 0, item_tax: 0, item_discount: 0, items_total: 0 },
       );
 
       const orderTaxPercent = order_tax || 0;
@@ -248,6 +249,7 @@ exports.salesService = {
         summary.items_total + orderTaxAmount + shippingCharge - orderDiscount;
 
       const sale = await Sale.findByPk(sale_id, { transaction });
+      if (!sale) throw new Error("Sale not found");
 
       let payment_status = "UNPAID";
       if (Number(sale.paid_amount) === Number(grand_total)) {
@@ -265,12 +267,14 @@ exports.salesService = {
           shipping: shippingCharge,
           status,
           sub_total: summary.items_total,
-          grand_total: grand_total,
+          grand_total,
           due_amount: grand_total - sale.paid_amount,
           payment_status,
         },
         { transaction },
       );
+
+      /* ================= HANDLE ITEMS ================= */
 
       const existingItems = await SaleItem.findAll({
         where: { sale_id, shop_id },
@@ -284,56 +288,149 @@ exports.salesService = {
       const incomingIds = [];
 
       for (const item of sales_items) {
-        const stock = await Stock.findOne({
-          where: {
-            product_variant_id: item.product_variant_id,
-            shop_id,
-          },
-          transaction,
-        });
+        if (!item.warehouse_id) throw new Error("Warehouse must be selected");
 
-        if (!stock) {
-          throw new Error("Stock not found for variant");
-        }
+        const existingItem = item.sales_item_id
+          ? existingMap.get(item.sales_item_id)
+          : null;
 
-        if (item.sales_item_id && existingMap.has(item.sales_item_id)) {
-          const oldItem = existingMap.get(item.sales_item_id);
+        /* =================================================
+         CASE 1: UPDATE EXISTING ITEM
+      ================================================= */
+        if (existingItem) {
+          incomingIds.push(item.sales_item_id);
 
-          const qtyDiff = oldItem.quantity - item.quantity;
+          /* -------- WAREHOUSE CHANGED -------- */
+          if (existingItem.warehouse_id !== item.warehouse_id) {
+            // Return stock to old warehouse
+            const oldStock = await Stock.findOne({
+              where: {
+                product_variant_id: existingItem.product_variant_id,
+                warehouse_id: existingItem.warehouse_id,
+                shop_id,
+              },
+              transaction,
+            });
 
-          if (qtyDiff !== 0) {
-            const beforeQty = stock.quantity;
-            const afterQty = beforeQty + qtyDiff;
+            if (!oldStock) throw new Error("Old warehouse stock not found");
 
-            if (afterQty < 0) {
-              throw new Error("Insufficient stock");
-            }
+            const oldAfter = oldStock.quantity + existingItem.quantity;
 
-            const movementType = qtyDiff > 0 ? "IN" : "OUT";
-
-            await stock.update({ quantity: afterQty }, { transaction });
+            await oldStock.update(
+              {
+                quantity: oldAfter,
+                status: oldAfter === 0 ? "OUTSTOCK" : "INSTOCK",
+              },
+              { transaction },
+            );
 
             await StockMovement.create(
               {
-                stock_id: stock.stock_id,
-                sale_id: sale_id,
-                type: movementType,
-                reason: "SALE_UPDATE",
-                before_qty: beforeQty,
-                after_qty: afterQty,
-                quantity: Math.abs(qtyDiff), // always positive
+                stock_id: oldStock.stock_id,
+                sale_id,
+                type: "IN",
+                reason: "SALE_WAREHOUSE_CHANGE",
+                before_qty: oldStock.quantity,
+                after_qty: oldAfter,
+                quantity: existingItem.quantity,
                 reference_id: sale_id,
-                note: `Sale quantity updated`,
+                note: "Returned due to warehouse change",
                 shop_id,
               },
               { transaction },
             );
+
+            // Deduct from new warehouse
+            const newStock = await Stock.findOne({
+              where: {
+                product_variant_id: item.product_variant_id,
+                warehouse_id: item.warehouse_id,
+                shop_id,
+              },
+              transaction,
+            });
+
+            if (!newStock) throw new Error("New warehouse stock not found");
+
+            if (newStock.quantity < item.quantity)
+              throw new Error("Insufficient stock in new warehouse");
+
+            const newAfter = newStock.quantity - item.quantity;
+
+            await newStock.update(
+              {
+                quantity: newAfter,
+                status: newAfter === 0 ? "OUTSTOCK" : "INSTOCK",
+              },
+              { transaction },
+            );
+
+            await StockMovement.create(
+              {
+                stock_id: newStock.stock_id,
+                sale_id,
+                type: "OUT",
+                reason: "SALE_WAREHOUSE_CHANGE",
+                before_qty: newStock.quantity,
+                after_qty: newAfter,
+                quantity: item.quantity,
+                reference_id: sale_id,
+                note: "Deducted due to warehouse change",
+                shop_id,
+              },
+              { transaction },
+            );
+          } else {
+            /* -------- QUANTITY CHANGED -------- */
+            const qtyDiff = existingItem.quantity - item.quantity;
+
+            if (qtyDiff !== 0) {
+              const stock = await Stock.findOne({
+                where: {
+                  product_variant_id: item.product_variant_id,
+                  warehouse_id: item.warehouse_id,
+                  shop_id,
+                },
+                transaction,
+              });
+
+              if (!stock) throw new Error("Stock not found");
+
+              const after = stock.quantity + qtyDiff;
+
+              if (after < 0) throw new Error("Insufficient stock");
+
+              await stock.update(
+                {
+                  quantity: after,
+                  status: after === 0 ? "OUTSTOCK" : "INSTOCK",
+                },
+                { transaction },
+              );
+
+              await StockMovement.create(
+                {
+                  stock_id: stock.stock_id,
+                  sale_id,
+                  type: qtyDiff > 0 ? "IN" : "OUT",
+                  reason: "SALE_UPDATE",
+                  before_qty: stock.quantity,
+                  after_qty: after,
+                  quantity: Math.abs(qtyDiff),
+                  reference_id: sale_id,
+                  note: "Quantity updated",
+                  shop_id,
+                },
+                { transaction },
+              );
+            }
           }
 
-          await oldItem.update(
+          await existingItem.update(
             {
               product_variant_id: item.product_variant_id,
               quantity: item.quantity,
+              warehouse_id: item.warehouse_id,
               discount: item.discount,
               tax: item.tax,
               tax_amount: item.tax_amount,
@@ -341,14 +438,56 @@ exports.salesService = {
             },
             { transaction },
           );
-
-          incomingIds.push(item.sales_item_id);
         } else {
+          /* =================================================
+         CASE 2: NEW ITEM
+      ================================================= */
+          const stock = await Stock.findOne({
+            where: {
+              product_variant_id: item.product_variant_id,
+              warehouse_id: item.warehouse_id,
+              shop_id,
+            },
+            transaction,
+          });
+
+          if (!stock) throw new Error("Stock not found");
+
+          if (stock.quantity < item.quantity)
+            throw new Error("Insufficient stock");
+
+          const after = stock.quantity - item.quantity;
+
+          await stock.update(
+            {
+              quantity: after,
+              status: after === 0 ? "OUTSTOCK" : "INSTOCK",
+            },
+            { transaction },
+          );
+
+          await StockMovement.create(
+            {
+              stock_id: stock.stock_id,
+              sale_id,
+              type: "OUT",
+              reason: "SALE",
+              before_qty: stock.quantity,
+              after_qty: after,
+              quantity: item.quantity,
+              reference_id: sale_id,
+              note: "New sale item added",
+              shop_id,
+            },
+            { transaction },
+          );
+
           const newItem = await SaleItem.create(
             {
               sale_id,
               product_variant_id: item.product_variant_id,
               quantity: item.quantity,
+              warehouse_id: item.warehouse_id,
               tax_amount: item.tax_amount,
               discount: item.discount,
               tax: item.tax,
@@ -357,33 +496,14 @@ exports.salesService = {
             },
             { transaction },
           );
-          const beforeQty = stock.quantity;
-          const afterQty = beforeQty - item.quantity;
 
-          if (afterQty < 0) {
-            throw new Error("Insufficient stock");
-          }
-
-          await stock.update({ quantity: afterQty }, { transaction });
-
-          await StockMovement.create(
-            {
-              stock_id: stock.stock_id,
-              sale_id: sale_id,
-              type: "OUT",
-              reason: "SALE",
-              before_qty: beforeQty,
-              after_qty: afterQty,
-              quantity: item.quantity,
-              reference_id: sale_id,
-              note: `New sale item added`,
-              shop_id,
-            },
-            { transaction },
-          );
           incomingIds.push(newItem.sales_item_id);
         }
       }
+
+      /* =================================================
+       CASE 3: DELETE REMOVED ITEMS
+    ================================================= */
 
       const itemsToDelete = existingItems.filter(
         (item) => !incomingIds.includes(item.sales_item_id),
@@ -393,27 +513,35 @@ exports.salesService = {
         const stock = await Stock.findOne({
           where: {
             product_variant_id: item.product_variant_id,
+            warehouse_id: item.warehouse_id,
             shop_id,
           },
           transaction,
         });
 
-        const beforeQty = stock.quantity;
-        const afterQty = beforeQty + item.quantity;
+        if (!stock) throw new Error("Stock not found while deleting");
 
-        await stock.update({ quantity: afterQty }, { transaction });
-        await stock.reload({ transaction });
+        const after = stock.quantity + item.quantity;
+
+        await stock.update(
+          {
+            quantity: after,
+            status: after === 0 ? "OUTSTOCK" : "INSTOCK",
+          },
+          { transaction },
+        );
+
         await StockMovement.create(
           {
             stock_id: stock.stock_id,
-            sale_id: sale_id,
+            sale_id,
             type: "IN",
             reason: "SALE_DELETE",
-            before_qty: beforeQty,
-            after_qty: afterQty,
+            before_qty: stock.quantity,
+            after_qty: after,
             quantity: item.quantity,
             reference_id: sale_id,
-            note: `Sale item removed`,
+            note: "Sale item removed",
             shop_id,
           },
           { transaction },
@@ -439,7 +567,7 @@ exports.salesService = {
         throw new Error("Invalid payment amount");
       }
 
-      const payment = await Payment.findOne({
+      const payment = await SalesPayment.findOne({
         where: {
           payment_id: payment_id,
           shop_id,
@@ -512,7 +640,7 @@ exports.salesService = {
   deletePaymentOfSale: async (payment_id, shop_id) => {
     const transaction = await sequelize.transaction();
     try {
-      const payment = await Payment.findOne({
+      const payment = await SalesPayment.findOne({
         where: {
           payment_id: payment_id,
           shop_id,
@@ -578,7 +706,7 @@ exports.salesService = {
         throw new Error("Sale id is required");
       }
 
-      const payments = await Payment.findAll({
+      const payments = await SalesPayment.findAll({
         where: {
           sale_id: sale_id,
           shop_id,
@@ -797,6 +925,7 @@ exports.salesService = {
               "discount",
               "tax",
               "tax_amount",
+              "warehouse_id",
               "total",
             ],
             include: [
@@ -842,11 +971,13 @@ exports.salesService = {
         sales_items: saleJson.sales_items?.map((item) => ({
           sales_item_id: item.sales_item_id,
           product_variant_id: item.product_variant_id,
+          warehouse_id: item.warehouse_id,
           quantity: Number(item.quantity),
           discount: Number(item.discount),
           tax: Number(item.tax),
           tax_amount: Number(item.tax_amount),
           total: Number(item.total),
+
           variant: {
             skuCode: item.variant?.skuCode || null,
             variant_label: item.variant?.variant_label || null,

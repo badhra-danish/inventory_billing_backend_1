@@ -19,6 +19,9 @@ const SaleItem = sequelize.define(
       type: DataTypes.UUID,
       field: "product_variant_id",
     },
+    warehouse_id: {
+      type: DataTypes.UUID,
+    },
     quantity: {
       type: DataTypes.INTEGER,
       allowNull: false,

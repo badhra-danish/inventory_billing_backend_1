@@ -49,7 +49,7 @@ const Purchase = sequelize.define(
     },
 
     status: {
-      type: DataTypes.ENUM("PENDING", "RECEIVED", "ORDERED"),
+      type: DataTypes.ENUM("PENDING", "RECEIVED", "ORDERED", "COMPLETED"),
       allowNull: false,
       defaultValue: "PENDING",
     },

@@ -287,6 +287,60 @@ exports.stockService = {
   //   }
   // },
 
+  // getVariantInStock: async (query, shop_id) => {
+  //   try {
+  //     const { q } = query;
+
+  //     const variant = await Product_Variant.findAll({
+  //       subQuery: false,
+
+  //       where: {
+  //         [Op.or]: [
+  //           { skuCode: { [Op.like]: `%${q}%` } },
+  //           { variant_label: { [Op.like]: `%${q}%` } },
+  //           { "$product.productName$": { [Op.like]: `%${q}%` } },
+  //         ],
+  //         shop_id,
+  //       },
+
+  //       attributes: [
+  //         "product_variant_id",
+  //         "skuCode",
+  //         "price",
+  //         "variant_label",
+  //         [sequelize.fn("SUM", sequelize.col("stocks.quantity")), "quantity"],
+  //         [sequelize.col("product.productName"), "productName"],
+  //       ],
+
+  //       include: [
+  //         {
+  //           model: Product,
+  //           as: "product",
+  //           attributes: [],
+  //           required: false,
+  //         },
+  //         {
+  //           model: Stock,
+  //           as: "stocks",
+  //           attributes: [],
+  //           required: true,
+  //         },
+  //       ],
+
+  //       group: ["Product_Variant.product_variant_id", "product.productName"],
+
+  //       having: sequelize.literal("SUM(stocks.quantity) > 0"),
+
+  //       order: [["createdAt", "DESC"]],
+  //       limit: 20,
+  //     });
+
+  //     return variant;
+  //   } catch (error) {
+  //     throw error;
+  //   }
+  // },
+
   getVariantInStock: async (query, shop_id) => {
     try {
       const { q } = query;
@@ -308,8 +362,9 @@ exports.stockService = {
           "skuCode",
           "price",
           "variant_label",
-          [sequelize.fn("SUM", sequelize.col("stocks.quantity")), "quantity"],
           [sequelize.col("product.productName"), "productName"],
+          [sequelize.col("stocks.warehouse_id"), "warehouse_id"],
+          [sequelize.fn("SUM", sequelize.col("stocks.quantity")), "quantity"],
         ],
 
         include: [
@@ -317,7 +372,6 @@ exports.stockService = {
             model: Product,
             as: "product",
             attributes: [],
-            required: false,
           },
           {
             model: Stock,
@@ -327,7 +381,11 @@ exports.stockService = {
           },
         ],
 
-        group: ["Product_Variant.product_variant_id", "product.productName"],
+        group: [
+          "Product_Variant.product_variant_id",
+          "product.productName",
+          "stocks.warehouse_id",
+        ],
 
         having: sequelize.literal("SUM(stocks.quantity) > 0"),
 

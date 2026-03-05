@@ -5,5 +5,16 @@ const PurchaseController = require("../../controllers/Purchase/Purchase.Controll
 const router = express.Router();
 
 router.post("/create", auth, PurchaseController.createPurchase);
-
+router.get("/getallpurchaseinfo", auth, PurchaseController.getAllPurchaseInfo);
+router.get(
+  "/getpurchasebyid/:purchase_id",
+  auth,
+  PurchaseController.getPurchaseById,
+);
+router.put("/update/:purchase_id", auth, PurchaseController.updatePurchase);
+router.post(
+  "/createpuchasepayment/:purchase_id",
+  auth,
+  PurchaseController.createPaymentofPurchase,
+);
 module.exports = router;

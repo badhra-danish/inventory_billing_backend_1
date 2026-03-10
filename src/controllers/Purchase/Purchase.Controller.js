@@ -74,3 +74,45 @@ exports.createPaymentofPurchase = async (req, res) => {
     return error(res, err.message, 400);
   }
 };
+exports.getAllPaymentPurchase = async (req, res) => {
+  try {
+    const { purchase_id } = req.params;
+    const shop_id = req.user.shop_id;
+    const payment = await purchaseService.getAllPaymentByPurchase(
+      purchase_id,
+      shop_id,
+    );
+    return success(res, "Payment Fetch SuccessFully", payment);
+  } catch (err) {
+    return error(res, err.message, 400);
+  }
+};
+exports.updatePaymentPurchase = async (req, res) => {
+  try {
+    const { payment_id } = req.params;
+    const shop_id = req.user.shop_id;
+
+    const updatedpayment = await purchaseService.updatePaymentOfPurchase(
+      payment_id,
+      req.body,
+      shop_id,
+    );
+    return success(res, "Payment Updated SuccessFully", updatedpayment);
+  } catch (err) {
+    return error(res, err.message, 400);
+  }
+};
+exports.deletePaymentPurchase = async (req, res) => {
+  try {
+    const { payment_id } = req.params;
+    const shop_id = req.user.shop_id;
+
+    const payment = await purchaseService.deletePaymentOfPurchase(
+      payment_id,
+      shop_id,
+    );
+    return success(res, "Payment Deleted SuccessFully", payment);
+  } catch (err) {
+    return error(res, err.message, 400);
+  }
+};

@@ -12,7 +12,10 @@ const {
 const { error } = require("../../utils/response");
 const { Op } = require("sequelize");
 const PurchasePayment = require("../../models/Purchase/PurchasePayment.Model");
-
+const getStockStatus = (qty) => {
+  if (qty <= 0) return "OUTSTOCK";
+  return "INSTOCK";
+};
 exports.purchaseService = {
   createPurchase: async (purchaseData, shop_id) => {
     const transaction = await sequelize.transaction();
@@ -36,7 +39,7 @@ exports.purchaseService = {
           acc.sub_total += itemSubTotal;
           acc.item_tax += item.tax_amount || 0;
           acc.item_discount += item.discount || 0;
-          acc.items_total += item.total; // item final total
+          acc.items_total += item.total;
 
           return acc;
         },
@@ -52,6 +55,7 @@ exports.purchaseService = {
       const orderDiscount = discount || 0;
       const shippingCharge = shipping || 0;
       const orderTaxAmount = (summary.items_total * orderTaxPercent) / 100;
+
       const grand_total =
         summary.items_total + orderTaxAmount + shippingCharge - orderDiscount;
 
@@ -105,7 +109,7 @@ exports.purchaseService = {
               product_variant_id: item.product_variant_id,
               warehouse_id: warehouse_id,
               quantity: item.quantity,
-              status: "INSTOCK",
+              status: item.quantity <= 0 ? "OUTOFSTOCK" : "INSTOCK",
               shop_id: shop_id,
             },
             { transaction },
@@ -130,7 +134,7 @@ exports.purchaseService = {
           await stock.update(
             {
               quantity: afterQty,
-              status: afterQty === 0 ? "OUTSTOCK" : "INSTOCK",
+              status: afterQty <= 0 ? "OUTOFSTOCK" : "INSTOCK",
             },
             { transaction },
           );
@@ -158,6 +162,7 @@ exports.purchaseService = {
       throw error;
     }
   },
+
   updatePurchase: async (purchase_id, updatedData, shop_id) => {
     const transaction = await sequelize.transaction();
 
@@ -215,11 +220,12 @@ exports.purchaseService = {
       }
 
       /* ================= UPDATE PURCHASE ================= */
+
       const existingReference = await Purchase.findOne({
         where: {
           reference_no,
           shop_id,
-          purchase_id: { [Op.ne]: purchase_id }, // exclude current record
+          purchase_id: { [Op.ne]: purchase_id },
         },
         transaction,
       });
@@ -227,6 +233,7 @@ exports.purchaseService = {
       if (existingReference) {
         throw new Error("Reference number already exists");
       }
+
       await purchase.update(
         {
           supplier_id,
@@ -266,14 +273,15 @@ exports.purchaseService = {
         /* =================================================
          CASE 1: UPDATE EXISTING ITEM
       ================================================= */
+
         if (existingItem) {
           incomingIds.push(existingItem.purchase_item_id);
 
           const qtyDiff = item.quantity - existingItem.quantity;
 
           /* ================= WAREHOUSE CHANGED ================= */
+
           if (warehouse_id !== oldWarehouseId) {
-            // -------- REMOVE FROM OLD WAREHOUSE --------
             const oldStock = await Stock.findOne({
               where: {
                 product_variant_id: existingItem.product_variant_id,
@@ -288,14 +296,19 @@ exports.purchaseService = {
             const oldBefore = oldStock.quantity;
             const oldAfter = oldBefore - existingItem.quantity;
 
-            await oldStock.update({ quantity: oldAfter }, { transaction });
+            await oldStock.update(
+              {
+                quantity: oldAfter,
+                status: getStockStatus(oldAfter),
+              },
+              { transaction },
+            );
 
             await StockMovement.create(
               {
                 stock_id: oldStock.stock_id,
                 purchase_id,
                 type: "OUT",
-
                 before_qty: oldBefore,
                 after_qty: oldAfter,
                 quantity: existingItem.quantity,
@@ -305,7 +318,8 @@ exports.purchaseService = {
               { transaction },
             );
 
-            // -------- ADD TO NEW WAREHOUSE --------
+            /* ===== ADD TO NEW WAREHOUSE ===== */
+
             let newStock = await Stock.findOne({
               where: {
                 product_variant_id: item.product_variant_id,
@@ -331,7 +345,13 @@ exports.purchaseService = {
             const newBefore = newStock.quantity;
             const newAfter = newBefore + item.quantity;
 
-            await newStock.update({ quantity: newAfter }, { transaction });
+            await newStock.update(
+              {
+                quantity: newAfter,
+                status: getStockStatus(newAfter),
+              },
+              { transaction },
+            );
 
             await StockMovement.create(
               {
@@ -348,7 +368,6 @@ exports.purchaseService = {
               { transaction },
             );
           } else if (qtyDiff !== 0) {
-            /* ================= QUANTITY UPDATED ================= */
             const stock = await Stock.findOne({
               where: {
                 product_variant_id: item.product_variant_id,
@@ -365,7 +384,13 @@ exports.purchaseService = {
 
             if (after < 0) throw new Error("Insufficient stock");
 
-            await stock.update({ quantity: after }, { transaction });
+            await stock.update(
+              {
+                quantity: after,
+                status: getStockStatus(after),
+              },
+              { transaction },
+            );
 
             await StockMovement.create(
               {
@@ -420,7 +445,13 @@ exports.purchaseService = {
           const before = stock.quantity;
           const after = before + item.quantity;
 
-          await stock.update({ quantity: after }, { transaction });
+          await stock.update(
+            {
+              quantity: after,
+              status: getStockStatus(after),
+            },
+            { transaction },
+          );
 
           await StockMovement.create(
             {
@@ -455,13 +486,12 @@ exports.purchaseService = {
         }
       }
 
-      /* =================================================
-       CASE 3: DELETE REMOVED ITEMS
-    ================================================= */
+      /* ================= DELETE REMOVED ITEMS ================= */
 
       const itemsToDelete = existingItems.filter(
         (item) => !incomingIds.includes(item.purchase_item_id),
       );
+
       for (const item of itemsToDelete) {
         const stock = await Stock.findOne({
           where: {
@@ -477,7 +507,13 @@ exports.purchaseService = {
         const before = stock.quantity;
         const after = before - item.quantity;
 
-        await stock.update({ quantity: after }, { transaction });
+        await stock.update(
+          {
+            quantity: after,
+            status: getStockStatus(after),
+          },
+          { transaction },
+        );
 
         await StockMovement.create(
           {
@@ -784,6 +820,167 @@ exports.purchaseService = {
       await transaction.rollback();
       console.log(error);
 
+      throw error;
+    }
+  },
+  getAllPaymentByPurchase: async (purchase_id, shop_id) => {
+    try {
+      if (!purchase_id) {
+        throw new Error("Purchase id is required");
+      }
+
+      const payments = await PurchasePayment.findAll({
+        where: {
+          purchase_id: purchase_id,
+          shop_id,
+        },
+        order: [["createdAt", "DESC"]],
+      });
+
+      return payments;
+    } catch (error) {
+      throw error;
+    }
+  },
+  updatePaymentOfPurchase: async (payment_id, paymentData, shop_id) => {
+    const transaction = await sequelize.transaction();
+    try {
+      const { amount, payment_method, payment_date, note } = paymentData;
+
+      if (!amount || amount <= 0) {
+        throw new Error("Invalid payment amount");
+      }
+
+      const payment = await PurchasePayment.findOne({
+        where: {
+          payment_id: payment_id,
+          shop_id,
+        },
+        transaction,
+      });
+
+      if (!payment) {
+        throw new Error("Payment not found");
+      }
+
+      const purchase = await Purchase.findOne({
+        where: {
+          purchase_id: payment.purchase_id,
+          shop_id,
+        },
+        transaction,
+        lock: true,
+      });
+
+      if (!purchase) {
+        throw new Error("Purchase not found");
+      }
+
+      const oldAmount = Number(payment.amount);
+      const newAmount = Number(amount);
+
+      const recalculatedPaid =
+        Number(purchase.paid_amount) - oldAmount + newAmount;
+
+      if (recalculatedPaid > Number(purchase.grand_total)) {
+        throw new Error("Payment exceeds purchase total");
+      }
+
+      const due_amount = Number(purchase.grand_total) - recalculatedPaid;
+
+      let payment_status = "UNPAID";
+      if (recalculatedPaid === Number(purchase.grand_total)) {
+        payment_status = "PAID";
+      } else if (recalculatedPaid > 0) {
+        payment_status = "PARTIALLY_PAID";
+      }
+
+      await payment.update(
+        {
+          amount: newAmount,
+          payment_method,
+          payment_date,
+          note,
+        },
+        { transaction },
+      );
+
+      await purchase.update(
+        {
+          paid_amount: recalculatedPaid,
+          due_amount,
+          payment_status,
+        },
+        { transaction },
+      );
+
+      await transaction.commit();
+      return payment;
+    } catch (error) {
+      await transaction.rollback();
+      console.error(error);
+      throw error;
+    }
+  },
+  deletePaymentOfPurchase: async (payment_id, shop_id) => {
+    const transaction = await sequelize.transaction();
+    try {
+      const payment = await PurchasePayment.findOne({
+        where: {
+          payment_id: payment_id,
+          shop_id,
+        },
+        transaction,
+      });
+      if (!payment) {
+        throw new Error("Payment not found");
+      }
+
+      const purchase = await Purchase.findOne({
+        where: {
+          purchase_id: payment.purchase_id,
+          shop_id,
+        },
+        transaction,
+        lock: true,
+      });
+
+      if (!purchase) {
+        throw new Error("Purchase not found");
+      }
+
+      const paymentAmount = Number(payment.amount);
+
+      const paid_amount = Number(purchase.paid_amount) - paymentAmount;
+
+      const safePaidAmount = paid_amount < 0 ? 0 : paid_amount;
+
+      const due_amount = Number(purchase.grand_total) - safePaidAmount;
+
+      let payment_status = "UNPAID";
+      if (safePaidAmount === Number(purchase.grand_total)) {
+        payment_status = "PAID";
+      } else if (safePaidAmount > 0) {
+        payment_status = "PARTIALLY_PAID";
+      }
+
+      await payment.destroy({ transaction });
+
+      await purchase.update(
+        {
+          paid_amount: safePaidAmount,
+          due_amount,
+          payment_status,
+        },
+        { transaction },
+      );
+
+      await transaction.commit();
+
+      return;
+    } catch (error) {
+      await transaction.rollback();
+      console.error(error);
       throw error;
     }
   },

@@ -17,4 +17,19 @@ router.post(
   auth,
   PurchaseController.createPaymentofPurchase,
 );
+router.get(
+  "/getallpaymentpurchase/:purchase_id",
+  auth,
+  PurchaseController.getAllPaymentPurchase,
+);
+router.put(
+  "/updatepaymentpurchase/:payment_id",
+  auth,
+  PurchaseController.updatePaymentPurchase,
+);
+router.delete(
+  "/deletepurchasepayment/:payment_id",
+  auth,
+  PurchaseController.deletePaymentPurchase,
+);
 module.exports = router;

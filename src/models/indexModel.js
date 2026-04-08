@@ -29,6 +29,9 @@ const Stock = require("./Stock/Stock.Model");
 const Sale = require("./Sales/Sales.Model");
 const SaleItem = require("./Sales/Sales_item.Model");
 const SalesPayment = require("./Sales/Salespayment.Model");
+const SaleReturn = require("./SalesReturn/SalesReturn.Model");
+const SaleReturnItems = require("./SalesReturn/SalesReturn_item.Model");
+
 const User = require("./Users/User.Model");
 const StockMovement = require("./Stock/StockMovement.Model");
 
@@ -150,40 +153,85 @@ StockMovement.belongsTo(Stock, {
 });
 
 //-------------Sales Model Relationship-------------/////
+// Sale → Items
 Sale.hasMany(SaleItem, {
   foreignKey: "sale_id",
   as: "sales_items",
 });
-
 SaleItem.belongsTo(Sale, {
   foreignKey: "sale_id",
   as: "sale",
 });
 
+// Sale → Payments
 Sale.hasMany(SalesPayment, {
   foreignKey: "sale_id",
-  as: "salepayments",
+  as: "payments",
 });
-
 SalesPayment.belongsTo(Sale, {
   foreignKey: "sale_id",
   as: "sale",
 });
 
+// Customer → Sale
 Customer.hasMany(Sale, {
   foreignKey: "customer_id",
   as: "sales",
 });
-
 Sale.belongsTo(Customer, {
   foreignKey: "customer_id",
   as: "customer",
+});
+
+// Variant → SaleItem
+Product_Variant.hasMany(SaleItem, {
+  foreignKey: "product_variant_id",
+  as: "sale_items",
 });
 SaleItem.belongsTo(Product_Variant, {
   foreignKey: "product_variant_id",
   as: "variant",
 });
 
+// Sale → Returns
+Sale.hasMany(SaleReturn, {
+  foreignKey: "sale_id",
+  as: "returns",
+});
+SaleReturn.belongsTo(Sale, {
+  foreignKey: "sale_id",
+  as: "sale",
+});
+
+// Return → Items
+SaleReturn.hasMany(SaleReturnItems, {
+  foreignKey: "sale_return_id",
+  as: "items",
+});
+SaleReturnItems.belongsTo(SaleReturn, {
+  foreignKey: "sale_return_id",
+  as: "sale_return",
+});
+
+// SaleItem → ReturnItems
+SaleItem.hasMany(SaleReturnItems, {
+  foreignKey: "sale_item_id",
+  as: "return_items",
+});
+SaleReturnItems.belongsTo(SaleItem, {
+  foreignKey: "sale_item_id",
+  as: "sale_item",
+});
+
+// Variant → ReturnItems
+Product_Variant.hasMany(SaleReturnItems, {
+  foreignKey: "product_variant_id",
+  as: "return_items",
+});
+SaleReturnItems.belongsTo(Product_Variant, {
+  foreignKey: "product_variant_id",
+  as: "variant",
+});
 // Purchase Realtionship
 
 Purchase.hasMany(PurchaseItems, {
@@ -282,4 +330,9 @@ module.exports = {
   StockMovement,
   PurchaseOrder,
   PurchaseOrderItem,
+  SaleReturn,
+  SaleReturnItems,
+  Purchase,
+  PurchaseItems,
+  PurchasePayment,
 };

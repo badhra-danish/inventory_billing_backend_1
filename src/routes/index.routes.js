@@ -16,6 +16,7 @@ const stockRoutes = require("./Stock/Stock.Routes");
 const warehouseRoutes = require("./People/warehouse.route");
 // Sales
 const salesRoutes = require("./Sales/sale.Route");
+const saleReturnRoutes = require("./SaleReturn/SaleReturn.route");
 
 const PurchaseOrderRoutes = require("./Purchase/PurchaseOrder.routes");
 const PurchaseRoutes = require("./Purchase/Purchase.Route");
@@ -34,6 +35,7 @@ router.use("/supplier", supplierRoutes);
 router.use("/stock", stockRoutes);
 
 router.use("/sale", salesRoutes);
+router.use("/salereturn", saleReturnRoutes);
 
 router.use("/purchaseorder", PurchaseOrderRoutes);
 router.use("/purchase", PurchaseRoutes);

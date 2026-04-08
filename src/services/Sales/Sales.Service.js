@@ -890,6 +890,28 @@ exports.salesService = {
       throw error;
     }
   },
+  getAllInvoiceNo: async (shop_id) => {
+    try {
+      const sales = await Sale.findAll({
+        where: { shop_id },
+        attributes: ["sale_id", "invoice_no", "sale_date"],
+      });
+      const formattedSales = sales.map((sale) => {
+        const saleJson = sale.toJSON();
+
+        return {
+          sale_id: saleJson.sale_id,
+          invoice_no: saleJson.invoice_no,
+          sale_date: saleJson.sale_date,
+        };
+      });
+
+      return formattedSales;
+    } catch (error) {
+      console.error("getAllSaleInfo error:", error);
+      throw error;
+    }
+  },
   getSaleById: async (sale_id, shop_id) => {
     try {
       const sale = await Sale.findOne({

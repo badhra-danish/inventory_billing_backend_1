@@ -52,3 +52,22 @@ exports.getSaleReturnById = async (req, res) => {
     return error(res, err.message, 400);
   }
 };
+exports.saleReturnUpdate = async (req, res) => {
+  try {
+    const shop_id = req.user.shop_id;
+    const sale_return_id = req.params.sale_return_id;
+    const saleReturn = await saleReturnService.updateSaleReturn(
+      sale_return_id,
+      req.body,
+
+      shop_id,
+    );
+    if (!saleReturn) {
+      return error(res, "SaleReturn Not Found", 404);
+    }
+
+    return success(res, "SaleReturn Update Successfully", saleReturn);
+  } catch (err) {
+    return error(res, err.message, 400);
+  }
+};

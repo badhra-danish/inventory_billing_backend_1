@@ -11,4 +11,9 @@ router.get(
   auth,
   SaleReturnController.getSaleReturnById,
 );
+router.put(
+  "/update/:sale_return_id",
+  auth,
+  SaleReturnController.saleReturnUpdate,
+);
 module.exports = router;

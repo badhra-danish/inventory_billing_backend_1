@@ -115,3 +115,12 @@ exports.getAllPaymentSales = async (req, res) => {
     return error(res, err.message, 400);
   }
 };
+exports.getAllInvoiceNo = async (req, res) => {
+  try {
+    const shop_id = req.user.shop_id;
+    const invoiceNo = await salesService.getAllInvoiceNo(shop_id);
+    return success(res, "Invoice No Fetch SuccessFully", invoiceNo);
+  } catch (err) {
+    return error(res, err.message, 400);
+  }
+};

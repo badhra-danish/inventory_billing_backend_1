@@ -212,69 +212,30 @@ exports.saleReturnService = {
       );
 
       // ---------------------------
-      // ✅ Sync Sale Table After Return
-      // Recalculate grand_total, due_amount, payment_status
-      // ---------------------------
-
-      // Step 1: Get total amount returned so far for this sale (including current return)
-      const totalReturnedRaw = await SaleReturn.sum("total_amount", {
-        where: { sale_id },
-        transaction,
-      });
-      const totalReturnedAmount = totalReturnedRaw || 0;
-
-      // Step 2: Recalculate effective grand total
-      const effectiveGrandTotal = sale.grand_total - totalReturnedAmount;
-
-      // Step 3: Recalculate effective due amount (never go below 0)
-      const effectiveDueAmount = Math.max(
-        effectiveGrandTotal - sale.paid_amount,
-        0,
-      );
-
-      // Step 4: Determine new payment status
-      let effectivePaymentStatus;
-      if (sale.paid_amount <= 0) {
-        effectivePaymentStatus = "UNPAID";
-      } else if (sale.paid_amount >= effectiveGrandTotal) {
-        effectivePaymentStatus = "PAID";
-      } else {
-        effectivePaymentStatus = "PARTIALLY_PAID";
-      }
-
-      // Step 5: ✅ Update Sale table with new calculated values
-      await sale.update(
-        {
-          grand_total: effectiveGrandTotal,
-          due_amount: effectiveDueAmount,
-          payment_status: effectivePaymentStatus,
-        },
-        { transaction },
-      );
-
-      // ---------------------------
       // Commit Transaction
       // ---------------------------
       await transaction.commit();
 
       return {
         saleReturn,
-        updatedSale: {
-          sale_id,
-          total_returned_amount: totalReturnedAmount,
-          effective_grand_total: effectiveGrandTotal,
-          effective_due_amount: effectiveDueAmount,
-          effective_payment_status: effectivePaymentStatus,
-          paid_amount: sale.paid_amount,
-        },
+        // updatedSale: {
+        //   sale_id,
+        //   total_returned_amount: totalReturnedAmount,
+        //   effective_grand_total: effectiveGrandTotal,
+        //   effective_due_amount: effectiveDueAmount,
+        //   effective_payment_status: effectivePaymentStatus,
+        //   paid_amount: sale.paid_amount,
+        // },
       };
     } catch (error) {
+      console.error("createSaleReturn error:", error);
       await transaction.rollback();
       throw error;
     }
   },
   updateSaleReturn: async (sale_return_id, returnData, shop_id) => {
     const transaction = await sequelize.transaction();
+
     try {
       const {
         srn_no,
@@ -291,34 +252,32 @@ exports.saleReturnService = {
         throw new Error("Return items are required");
       }
 
-      // ---------------------------
-      // Get Existing Sale Return
-      // ---------------------------
+      // ===========================
+      // GET EXISTING RETURN
+      // ===========================
       const saleReturn = await SaleReturn.findOne({
         where: { sale_return_id, shop_id },
         transaction,
       });
 
-      if (!saleReturn) {
-        throw new Error("Sale Return not found");
-      }
+      if (!saleReturn) throw new Error("Sale Return not found");
 
-      const sale_id = saleReturn.sale_id;
-
-      const sale = await Sale.findOne({
-        where: { sale_id, shop_id },
-        transaction,
-      });
-
-      // ---------------------------
-      // STEP 1: Reverse OLD RETURN EFFECT
-      // ---------------------------
+      // ===========================
+      // STEP 1: REVERSE OLD RETURN
+      // ===========================
       const oldItems = await SaleReturnItems.findAll({
         where: { sale_return_id },
         transaction,
       });
 
       for (const item of oldItems) {
+        // 🔁 Restore SALE ITEM quantity
+        const saleItem = await SaleItem.findOne({
+          where: { sales_item_id: item.sale_item_id, shop_id },
+          transaction,
+        });
+
+        // 🔁 Reverse STOCK
         const stock = await Stock.findOne({
           where: {
             product_variant_id: item.product_variant_id,
@@ -355,17 +314,17 @@ exports.saleReturnService = {
         }
       }
 
-      // ---------------------------
-      // STEP 2: Delete Old Items
-      // ---------------------------
+      // ===========================
+      // STEP 2: DELETE OLD ITEMS
+      // ===========================
       await SaleReturnItems.destroy({
         where: { sale_return_id },
         transaction,
       });
 
-      // ---------------------------
-      // STEP 3: Process NEW Items
-      // ---------------------------
+      // ===========================
+      // STEP 3: APPLY NEW RETURN
+      // ===========================
       let grandTotal = 0;
       const returnItemsData = [];
 
@@ -375,10 +334,9 @@ exports.saleReturnService = {
           transaction,
         });
 
-        if (!saleItem) {
-          throw new Error(`Sale item not found`);
-        }
+        if (!saleItem) throw new Error("Sale item not found");
 
+        // ✅ Check available qty
         const previousReturned = await SaleReturnItems.sum("return_quantity", {
           where: { sale_item_id: item.sale_item_id },
           transaction,
@@ -390,6 +348,7 @@ exports.saleReturnService = {
           throw new Error("Return qty exceeds available qty");
         }
 
+        // 💰 Calculation
         const subTotal = item.price * item.return_qty;
         const taxAmount = (subTotal * (item.tax || 0)) / 100;
         const total = subTotal + taxAmount - (item.discount || 0);
@@ -398,7 +357,7 @@ exports.saleReturnService = {
 
         returnItemsData.push({
           sale_return_id,
-          sale_item_id: item.sale_item_id,
+          sale_item_id: item.sale_item_id || null,
           product_variant_id: item.product_variant_id,
           warehouse_id: item.warehouse_id,
           return_quantity: item.return_qty,
@@ -409,9 +368,7 @@ exports.saleReturnService = {
           shop_id,
         });
 
-        // ---------------------------
-        // Update Stock AGAIN
-        // ---------------------------
+        //  Update stock
         let stock = await Stock.findOne({
           where: {
             product_variant_id: item.product_variant_id,
@@ -459,11 +416,14 @@ exports.saleReturnService = {
         }
       }
 
-      // ---------------------------
-      // Insert New Items
-      // ---------------------------
+      // ===========================
+      // SAVE NEW ITEMS
+      // ===========================
       await SaleReturnItems.bulkCreate(returnItemsData, { transaction });
 
+      // ===========================
+      // FINAL TOTAL
+      // ===========================
       const finalTotal =
         grandTotal + (grandTotal * order_tax) / 100 - discount + shipping;
 
@@ -478,35 +438,6 @@ exports.saleReturnService = {
         { transaction },
       );
 
-      // ---------------------------
-      // STEP 4: Recalculate Sale
-      // ---------------------------
-      const totalReturned = await SaleReturn.sum("total_amount", {
-        where: { sale_id },
-        transaction,
-      });
-
-      const effectiveGrandTotal = sale.grand_total - (totalReturned || 0);
-
-      const effectiveDueAmount = Math.max(
-        effectiveGrandTotal - sale.paid_amount,
-        0,
-      );
-
-      let paymentStatus;
-      if (sale.paid_amount <= 0) paymentStatus = "UNPAID";
-      else if (sale.paid_amount >= effectiveGrandTotal) paymentStatus = "PAID";
-      else paymentStatus = "PARTIALLY_PAID";
-
-      await sale.update(
-        {
-          grand_total: effectiveGrandTotal,
-          due_amount: effectiveDueAmount,
-          payment_status: paymentStatus,
-        },
-        { transaction },
-      );
-
       await transaction.commit();
 
       return {
@@ -514,6 +445,7 @@ exports.saleReturnService = {
         saleReturn,
       };
     } catch (error) {
+      console.error("updateSaleReturn error:", error);
       await transaction.rollback();
       throw error;
     }

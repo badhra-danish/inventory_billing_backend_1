@@ -118,6 +118,83 @@ exports.stockService = {
       throw err;
     }
   },
+  getLowStockVariant: async (limit, offset, shop_id) => {
+    try {
+      const lowStockVariant = await Stock.findAll({
+        limit,
+        offset,
+        distinct: true,
+        where: {
+          shop_id,
+          quantity: {
+            [Op.lte]: 5, // quantity <= 5
+          },
+        },
+        attributes: [
+          ["stock_id", "stock_id"],
+          ["quantity", "quantity"],
+          ["status", "status"],
+          [sequelize.col("warehouse.warehouseName"), "warehouseName"],
+          [sequelize.col("variant.skuCode"), "skuCode"],
+          [sequelize.col("variant.price"), "price"],
+          [sequelize.col("variant.variant_label"), "variant_label"],
+          [sequelize.col("variant->product.productName"), "productName"],
+        ],
+
+        include: [
+          {
+            model: Product_Variant,
+            as: "variant",
+
+            attributes: [],
+            include: [
+              {
+                model: Product,
+                as: "product",
+                attributes: [],
+              },
+            ],
+          },
+          {
+            model: Warehouse,
+            as: "warehouse",
+            attributes: [],
+          },
+        ],
+        order: [["createdAt", "DESC"]],
+      });
+
+      const totalStock = await Stock.count({
+        distinct: true,
+        where: {
+          shop_id,
+          quantity: {
+            [Op.lte]: 5, // quantity <= 5
+          },
+        },
+        include: [
+          {
+            model: Product_Variant,
+            as: "variant",
+            include: [
+              {
+                model: Product,
+                as: "product",
+              },
+            ],
+          },
+        ],
+      });
+
+      return {
+        data: lowStockVariant,
+        count: totalStock,
+      };
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  },
 
   getAllStockVariant: async (limit, offset, shop_id) => {
     try {

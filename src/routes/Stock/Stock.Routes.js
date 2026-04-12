@@ -16,6 +16,7 @@ router.put(
   StockController.updateStockQuantity,
 );
 router.get("/getallstockpage", auth, StockController.getAllStockPage);
+router.get("/getalllowstockpage", auth, StockController.getAllLowStockPage);
 router.get(
   "/getallstockmovementbyid/:stock_id",
   auth,

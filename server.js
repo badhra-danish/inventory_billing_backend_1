@@ -7,6 +7,7 @@ const cors = require("cors");
 const PORT = process.env.PORT || 5000;
 const routes = require("./src/routes/index.routes");
 const { seedSuperAdmin } = require("./src/seeds/superAdmin");
+
 app.use(
   cors({
     origin: "*",

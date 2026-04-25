@@ -87,4 +87,28 @@ exports.shopService = {
       throw error;
     }
   },
+  getAllShopAdmins: async () => {
+    try {
+      const shopAdmins = await User.findAll({
+        where: {
+          role: "SHOP_ADMIN",
+        },
+        attributes: ["user_id", "name", "email", "createdAt"],
+
+        include: [
+          {
+            model: Shop,
+            as: "shop", // make sure alias matches your association
+            attributes: ["shop_id", "shop_name", "address", "phone"],
+          },
+        ],
+
+        order: [["createdAt", "DESC"]],
+      });
+
+      return shopAdmins;
+    } catch (error) {
+      throw error;
+    }
+  },
 };

@@ -14,5 +14,11 @@ router.post(
   ShopController.createShopAdminWithShop,
 );
 router.post("/shoplogin", ShopController.loginShopAdmin);
+router.get(
+  "/getallshopadmin",
+  auth,
+  authorizeRoles("SUPER_ADMIN"),
+  ShopController.getAllShopAdmin,
+);
 
 module.exports = router;

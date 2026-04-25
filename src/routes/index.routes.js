@@ -20,6 +20,7 @@ const saleReturnRoutes = require("./SaleReturn/SaleReturn.route");
 
 const PurchaseOrderRoutes = require("./Purchase/PurchaseOrder.routes");
 const PurchaseRoutes = require("./Purchase/Purchase.Route");
+
 router.use("/auth", userRoutes);
 router.use("/category", categoryRoutes);
 router.use("/subcategory", subcategoryRoutes);

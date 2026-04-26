@@ -14,11 +14,16 @@ router.post(
   ShopController.createShopAdminWithShop,
 );
 router.post("/shoplogin", ShopController.loginShopAdmin);
+router.get("/getallshopadmin", auth, ShopController.getAllShopAdmin);
+router.put("/updateshopadmin/:id", ShopController.updateShopAdminWithShop);
+router.get("/dashboard/superadminstats", ShopController.getDashboardStats);
 router.get(
-  "/getallshopadmin",
-  auth,
-  authorizeRoles("SUPER_ADMIN"),
-  ShopController.getAllShopAdmin,
+  "/dashboard/shopadminstats/:id",
+  ShopController.getShopDashboardStats,
+);
+router.get(
+  "/dashboard/analytics/:id",
+  ShopController.getSalesPurchaseAnalytics,
 );
 
 module.exports = router;
